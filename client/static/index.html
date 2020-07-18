@@ -1,0 +1,311 @@
+<!doctype html>
+<html>
+  <head>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/static/favicon.ico?v=2" />
+
+    <meta charset="utf-8">
+
+    <meta http-equiv="cache-control" content="max-age=0" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta http-equiv="expires" content="0" />
+    <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+    <meta http-equiv="pragma" content="no-cache" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, user-scalable=0, maximum-scale=1, minimum-scale=1"
+    />
+
+    <!-- REMOVE NAVBAR ON HOMESCREEN -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="referrer" content="origin">
+
+    <!-- SAFARI TWEAKS -->
+    <script defer src="/static/polyfill.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/inobounce/0.1.6/inobounce.min.js"></script>
+    <script defer src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.21.7.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js"></script>
+
+    <!-- EXTRA SAFARI POLYFILLS -->
+    <script defer src="https://cdn.jsdelivr.net/npm/proxy-polyfill@0.3.0/proxy.min.js"></script>
+    <!-- <script defer src="https://cdn.jsdelivr.net/npm/symbol-es6@0.1.2/symbol-es6.min.js"></script> -->
+    <!-- <script defer src="https://unpkg.com/text-encoding@0.6.4/lib/encoding-indexes.js"></script> -->
+    <!-- <script defer src="https://unpkg.com/text-encoding@0.6.4/lib/encoding.js"></script> -->
+  <!--   <script defer src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@1.3.2/dist/polyfill.min.js"></script> -->
+
+
+    <!-- TOUCH EVENT HANDLING -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.js"></script>
+
+    <!-- DROPBOX: REPLACE WITH NPM -->
+    <script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+
+<!--     <script>
+        const image = new Image();
+        // image.src = '/static/logo-3x-lineless.png';
+        image.src = '/static/fake.png' // DELETEME
+    </script> -->
+
+<!--     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css"> -->
+  </head>
+  <style>
+    body {
+        background-color: rgb(30,30,80);
+    }
+
+    #raw-pomsheet {
+        overflow: hidden;
+        width: 100%;
+    }
+    body .overlay-wrapper {
+        width: 100vw;
+        height: 100vh;
+        /*background-color: red;*/
+        /*opacity: 0.5;*/
+        position: absolute;
+        pointer-events: none;
+        z-index: 10;
+    }
+    .overlay-wrapper > * {
+        pointer-events: auto;
+    }
+
+    html, body {
+        position: fixed;
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
+        margin: 0px;
+        padding: 0px;
+        /* this disables accidental refresh */
+        /*overflow: hidden;*/
+    }
+
+    body .app-wrapper {
+        width: 100vw;
+        height: 100vh;
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
+    }
+    /*
+    This is still specified in the mocks in
+    certain places, such as the slide-bar.
+    */
+    @font-face {
+        font-family: 'DIN';
+        src: url('/static/fonts/din-next-lt-pro-regular.otf');
+    }
+
+    /*
+    Tried woff from same source; dimensions were subtely taller. Using this for now.
+
+    For Proxima, keeping convention of using font name identical to that used in mock. There
+    may be other weights required.
+
+     */
+    @font-face {
+        font-family: 'ProximaNova-Bold';
+        src: url('/static/fonts/proxima-nova-bold.ttf');
+    }
+
+    @font-face {
+        font-family: 'ProximaNova-Regular';
+        src: url('/static/fonts/proxima-nova-reg.ttf');
+    }
+
+
+    @font-face {
+        font-family: 'Proxima Nova';
+        src: url('/static/fonts/proxima-nova-medium.ttf')
+    }
+
+    /* Tried woff from same source; dimensions were subtely taller. Using this for now. */
+    @font-face {
+        font-family: 'ProximaNova-Bold';
+        src: url('/static/fonts/proxima-nova-bold.ttf');
+    }
+
+    @font-face {
+        font-family: 'ProximaNova-Regular';
+        src: url('/static/fonts/proxima-nova-reg.ttf');
+    }
+
+    #preload {
+        transition: opacity 200ms linear;
+        z-index: 10;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        /* hiding for now */
+        /*display: flex;*/
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff; /* Old browsers */
+        background: -moz-radial-gradient(center, ellipse cover, #ffffff 0%, #d0dded 100%, #bac3d1 100%); /* FF3.6-15 */
+        background: -webkit-radial-gradient(center, ellipse cover, #ffffff 0%,#d0dded 100%,#bac3d1 100%); /* Chrome10-25,Safari5.1-6 */
+        background: radial-gradient(ellipse at center, #ffffff 0%,#d0dded 100%,#bac3d1 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    }
+    #splash-logo {
+        position: relative;
+        background: #007eb2;
+        border-radius: 100px;
+        box-shadow: 8px 8px 10px rgba(0,0,0,0.3);
+        animation: appear 800ms cubic-bezier(.87,-.2,.19,1.5) forwards;
+    }
+    #splash-logo img {
+        vertical-align: middle;
+    }
+    .splash-line1, .splash-line2, .splash-line3 {
+        box-shadow: 0 0 0.5px 0.5px white;
+        margin-left: 22px;
+        margin-top: 26px;
+        position: absolute;
+        height: 5px;
+        left: 0px;
+        width: 0px;
+        border-radius: 5px;
+        background: white;
+        z-index: 100;
+        /*opacity: 0.5;*/
+    }
+    .splash-line1 {
+        animation: slide-one 1s cubic-bezier(.87,-.2,.19,1.2) forwards;
+        animation-delay: 100ms;
+    }
+    .splash-line2 {
+        top: 9px;
+        /*left: 15px; */
+        width: 0px;
+        animation: slide-two 1s cubic-bezier(.87,-.2,.19,1.2) forwards;
+        animation-delay: 200ms;
+    }
+
+    .splash-line3 {
+        top: 19px;
+        /*left: 5px;*/
+        width: 0px;
+        animation: slide-three 1s cubic-bezier(.87,-.2,.19,1.2) forwards;
+        animation-delay: 400ms;
+    }
+    @keyframes appear {
+        0% {
+            transform: scale(0);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+    @keyframes slide-one {
+        0% {
+            width: 0px;
+        }
+        100% {
+            width: 23px;
+        }
+    }
+    @keyframes slide-two {
+        0% {
+            width: 0px;
+            left: 0px;
+        }
+        100% {
+            width: 39px;
+            left: 15px;
+        }
+    }
+    @keyframes slide-three {
+        0% {
+            left: 0px;
+            width: 0px;
+        }
+        100% {
+            left: 5px;
+            width: 26px;
+        }
+    }
+    body {
+        overflow-x: hidden;
+    }
+
+  </style>
+  <body>
+<!--     <div id="preload">
+        <div id="splash-logo">
+            <div class="/splash-line1"></div>
+            <div class="/splash-line2"></div>
+            <div class="/splash-line3"></div>
+            <img src="/static/logo-3x-lineless.png" />
+        </div>
+
+    </div> -->
+    <!-- <div style="overflow: scroll;"> -->
+
+    <div id="app" style="height: 100%; width: 100%;"></div>
+
+    <!-- </div> -->
+
+    <!-- FIREBASE START -->
+    <!--refactor init and config to src/lib/firebase.js-->
+<!--     <script defer src="https://www.gstatic.com/firebasejs/4.11.0/firebase.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/4.10.1/firebase-app.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/4.10.1/firebase-auth.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/4.10.1/firebase-database.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/4.10.1/firebase-firestore.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/4.10.1/firebase-storage.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/4.10.1/firebase-messaging.js"></script> -->
+    <!--<script defer src="/static/firebase.config.js"></script>-->
+    <!-- FIREBASE END -->
+
+<!--     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.5/lodash.core.js"></script> -->
+    <script defer src="/bundle.js"></script>
+
+    <script src="https://apis.google.com/js/api.js"></script>
+
+    <script type="text/javascript">
+        // Note: this is deferring the bundle load way too long
+        // Should hook into react mounting instead
+        // document.getElementById('preload').style.display = 'none'
+        // var __startApp = function (e) {
+        //     console.log(e.target);
+        //     if (e.target.className === 'splash-line3') {
+        //         document.body.style.overflow = 'hidden'
+        //         var bundle = document.createElement('script')
+        //         bundle.type = 'text/javascript'
+        //         bundle.src = '/bundle.js'
+        //         document.body.appendChild(bundle)
+        //         window.removeEventListener('animationend',__startApp)
+        //     }
+        // }
+        // window.addEventListener('animationend', __startApp)
+
+        // Quick dirty hack to get rid of styles.css error in non-prod
+        //
+
+        // document.addEventListener('touchmove', function(event) {
+        //     event.preventDefault();
+        // }, false);
+        // document.getElementById('app').addEventListener('touchmove', function(event) {
+        //     event.stopPropagation();
+        // }, false);
+
+        if (!['127.0.0.1','0.0.0.0', 'localhost'].includes(location.hostname)) {
+            document.body.appendChild(
+                Object.assign(document.createElement('link'), {
+                    rel: 'stylesheet',
+                    href: '/styles.css'
+                })
+            )
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            FastClick.attach(document.body);
+        }, false);
+    </script>
+  </body>
+</html>

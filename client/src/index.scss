@@ -1,0 +1,191 @@
+$vitarka-blue: #093f9b;
+
+$vitarka-grey: #969696;
+$vitarka-light-cool-grey: #f8fafc;
+$vitarka-cool-grey: #e6e9f4;
+
+$vitarka-light-cool-grey-border: #e3e9ef;
+$vitarka-light-grey-border: #d8d8d8;
+
+$vitarka-text: #404041;
+
+$vitarka-badge-red: #ea3500;
+
+// FROM NEW STYLE GUIDE
+$primary-blue: #093f9b;
+$confirmation: #031f51;
+$main-text: #282828;
+$light-text: #7a7a7a;
+$separator: #eee;
+$flag: #ea3500;
+$time: #ea9600;
+
+
+
+body, html {
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+}
+
+ul { padding: 0; }
+li { list-style: none }
+
+.text {
+  color: $main-text;
+  font-size: 12px;
+
+  font-family: 'ProximaNova-Regular';
+
+  &.large { font-size: 14px }
+  &.extra-large { font-size: 16px }
+  &.medium { font-size: 12px }
+  &.small { font-size: 11px }
+  &.blue { color: #007eb2 }
+  &.primary-blue { color: $primary-blue }
+  &.white { color: #fff }
+  &.red { color: #fa2706 }
+  &.gold { color: #f5a623 }
+  &.faded { color: #979797 }
+  &.bold { font-weight: bold }
+  &.underline { text-decoration: underline }
+  &.right { text-align: right }
+  &.left { text-align: left }
+  &.center { text-align: center }
+  &.uppercase { text-transform: uppercase }
+  &.light { color: $light-text }
+}
+
+.row { display: flex; align-items: center; }
+.row.align-start { align-items: flex-start }
+.row.x-start { justify-content: flex-start }
+.row.x-center { justify-content: center }
+.row.x-end { justify-content: flex-end }
+.row.y-center { align-items: center }
+.row.y-start { align-items: flex-start }
+.row > * { flex: 1 }
+.row.no-flex-children  * { flex: none }
+.col { flex: 1; display: flex; flex-direction: column; }
+
+.col.align-start {
+  align-items: flex-start
+}
+
+.col.justify-start {
+  justify-content: flex-start
+}
+
+.col.x-center { align-items: center }
+.col.y-center { justify-content: center }
+
+.no-grow { flex-grow: 0!important }
+.flex-item { flex: 1 }
+.flex-pull-right { margin-left: auto }
+.flex-pull-left { margin-right: auto }
+
+.full-height { height: 100% }
+
+.full-width {
+  width: 100%
+}
+
+.scrollable {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+// From style guide, unused
+.button {
+  height: 28px;
+  padding: 10px;
+  border-radius: 2px;
+}
+
+.padding {
+  &.p15 { padding: 15px }
+}
+
+.pa-15 { padding: 15px }
+.pa10 { padding: 10px }
+.pa20 { padding: 20px }
+
+.pr10 { padding-right: 10px }
+.pr15 { padding-right: 15px }
+.pr20 { padding-right: 20px }
+
+.pt10 { padding-top: 10px }
+.pt20 { padding-top: 20px }
+.pb10 { padding-bottom: 10px }
+.pb15 { padding-bottom: 15px }
+.pb20 { padding-bottom: 20px }
+.pl15 { padding-left: 15px }
+.pl20 { padding-left: 20px }
+
+
+.px5 { padding-left: 5px; padding-right: 5px }
+.px10 { padding-left: 10px; padding-right: 10px }
+.px15 { padding-left: 15px; padding-right: 15px }
+.px20 { padding-left: 20px; padding-right: 20px }
+
+.py5 { padding-top: 5px; padding-bottom: 5px }
+.py10 { padding-top: 10px; padding-bottom: 10px }
+.py15 { padding-top: 15px; padding-bottom: 15px }
+.py20 { padding-top: 20px; padding-bottom: 20px }
+
+.ma0 { margin: 0 }
+.mb5 { margin-bottom: 5px }
+.mb10 { margin-bottom: 10px }
+.mb15 { margin-bottom: 15px }
+.mb20 { margin-bottom: 20px }
+
+.ml20 { margin-left: 20px }
+.mr20 { margin-right: 20px }
+.mt10 {
+  margin-top: 10px
+}
+
+.mt20 {
+  margin-top: 20px
+}
+
+
+// border all
+.ba-light-cool-grey { border: 1px solid $vitarka-light-cool-grey-border }
+.ba-light-grey { border: 1px solid $vitarka-light-grey-border }
+.ba-primary-blue { border: 1px solid $primary-blue }
+.ba-none {
+  border: none
+}
+
+// border bottom
+.bb-light-cool-grey { border-bottom: 1px solid $vitarka-light-cool-grey-border }
+.bb-light-grey { border-bottom: 1px solid $vitarka-light-grey-border }
+.bb-cool-grey { border-bottom: 1px solid $vitarka-cool-grey }
+
+// border radius all
+.brada4 { border-radius: 4px }
+.brada2 { border-radius: 2px }
+.br-rounded { border-radius: 50%!important }
+
+.bg-light-cool-grey { background-color: $vitarka-light-cool-grey }
+.bg-cool-grey { background-color: $vitarka-cool-grey }
+.bg-blue { background-color: $vitarka-blue }
+.bg-white { background-color: #fff }
+.bg-red { background-color: $vitarka-badge-red }
+
+.bg-primary-blue { background-color: $primary-blue }
+
+.rotate180 { transform: rotate(180deg) }
+
+.icon { height: 12px; }
+
+.h20 { height: 20px }
+.h28 { height: 28px }
+.h40 { height: 40px }
+.w20 { width: 20px }
+.h16 { height: 16px }
+.w16 { width: 16px }
+
+.not-visible { visibility: hidden }
+.hidden { display: none }
+

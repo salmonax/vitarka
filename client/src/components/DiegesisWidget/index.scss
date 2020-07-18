@@ -1,0 +1,26 @@
+.diegesis-widget-component {
+  color: white;
+  flex-direction: column;
+  background: red;
+  display: flex;
+  * {
+    display: flex;
+  }
+  .diegesis-widget-component > * > * {
+    flex-direction: row;
+  }
+  .boxes {
+    .box {
+      // padding: 5px;
+      // margin: 5px; 
+      min-width: 20px;
+      min-height: 20px;
+      border: 1px solid black;
+      background: #555;
+    }
+  }
+
+}
+
+
+

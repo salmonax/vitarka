@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<html>
+    <head>
+        <!--
+        Customize this policy to fit your own app's needs. For more guidance, see:
+            https://github.com/apache/cordova-plugin-whitelist/blob/master/README.md#content-security-policy
+        Some notes:
+            * gap: is required only on iOS (when using UIWebView) and is needed for JS->native communication
+            * https://ssl.gstatic.com is required only on Android and is needed for TalkBack to function properly
+            * Disables use of inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
+                * Enable inline JS: add 'unsafe-inline' to default-src
+        -->
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval' 'unsafe-inline' *; style-src 'self' 'unsafe-inline'; media-src * blob: data:; img-src 'self' data: content:;">
+        <meta name="format-detection" content="telephone=no">
+        <meta name="msapplication-tap-highlight" content="no">
+        <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
+        <link rel="stylesheet" type="text/css" href="css/index.css">
+        <title>Hello Vitarka</title>
+    </head>
+    <body>
+        <div class="app">
+            <h1>Apache Cordova</h1>
+            <div id="deviceready" class="blink">
+                <p class="event listening">Connecting to Device</p>
+                <p class="event received">Device is Ready</p>
+            </div>
+            <div class="my-button">Make Me Moo</div>
+        </div>
+        <script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" src="js/index.js"></script>
+        <script type="text/javascript" src="js/later.min.js"></script>
+        <script src="https://code.responsivevoice.org/responsivevoice.js?key=**INSERT_RV_KEY**"></script>
+    </body>
+    <style>
+        .my-button {
+            height: 50px;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 30px;
+            background: green;
+            border-radius: 5px;
+            line-height: 50px;
+            color: white;
+        }
+    </style>
+    <script>
+        const $ = document.querySelector.bind(document);
+        const telemetry = new Audio('/audio/telemetry.mp3');
+        $('.my-button').addEventListener('touchstart', e => {
+            $('.event.received').innerText = "FUCK YES FIRST TIME WORK";
+            telemetry.play();
+        });
+
+        later.date.localTime(); // Initialize 
+
+        document.addEventListener('deviceready', function () {
+            // Prevent backgrounMode from failing to trigger dev pushes with screen off
+            // Might want to add an "isScreenOff" check
+            cordova.plugins.backgroundMode.unlock();
+            cordova.plugins.backgroundMode.on('activate', () => {
+                console.log('Activated Background Mode.');
+                cordova.plugins.backgroundMode.disableWebViewOptimizations();
+                console.log('Disabled WebView Optimizations.');
+            });
+            cordova.plugins.backgroundMode.enable(); 
+                        
+            // Not verified to be necessary, but makes Android less likely to suspend the process
+            window.powerManagement.dim(function() {
+                console.log('Wakelock acquired');
+            }, function() {
+                console.log('Failed to acquire wakelock');
+            });
+            window.powerManagement.setReleaseOnPause(false, function() {
+                console.log('setReleaseOnPause successfully');
+            }, function() {
+                console.log('Failed to set');
+            });
+
+            // Bypass permission-request, currently only for responsiveVoice,
+            // but could be an issue for other W3C specs
+            cordova.plugins.Focus.focus($('#deviceready'));
+
+            // TODO: definitely wrap responsiveVoice in promise-related stuff that isn't terrible
+            setTimeout(() => {
+                responsiveVoice.speak('Welcome to the revolution, calmrad', 'UK English Female', {
+                    onend: () => sayCurrentTime(
+                        () => responsiveVoice.speak("I'll announce the end of your blocks every five hours! Enjoy Vitarka.", 'UK English Female'),
+                    ),
+                });
+            }, 300);
+        });
+            
+    
+        // Please fix this shit.
+        function sayCurrentTime(onend) {
+            const time = (new Date(Date.now()).toLocaleTimeString([], { timeStyle: 'short' }));
+            console.log('argh:', time);
+            responsiveVoice.speak(
+                'The current time is ' + time, 
+                'UK English Female',
+                {
+                    onend,
+                }
+            );
+        }
+
+        // Hard-coding these temporarily.
+        later.setTimeout(
+                () => sayCurrentTime(
+                    () => responsiveVoice.speak('End of first hour. Good luck!', 'UK English Female')
+                ),
+                later.parse.text('at 10:33pm'),
+        );
+        later.setTimeout(
+                () => sayCurrentTime(
+                    () => responsiveVoice.speak('End of second hour. Good luck!', 'UK English Female')
+                ),
+                later.parse.text('at 11:01pm'),
+        );
+        
+        later.setTimeout(
+                () => sayCurrentTime(),
+                later.parse.text('at 2:01am'),
+        );
+        
+        later.setTimeout(
+                () => sayCurrentTime(),
+                later.parse.text('at 7:01am'),
+        );
+
+        later.setTimeout(
+                () => sayCurrentTime(),
+                later.parse.text('at 12:01am'),
+        );;
+
+    </script>
+    
+</html>
