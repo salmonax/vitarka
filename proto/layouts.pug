@@ -2,6 +2,37 @@ head
   script.
     const screenWords = [1,2];
   style.
+    .slider {
+      -webkit-appearance: none;
+      width: 90%;
+      margin-left: 5%;
+      height: 12px;
+      border: 1px solid #fff9;
+      border-radius: 1px;
+      background: #ddd8;
+      outline: none;
+      opacity: 0.7;
+      -webkit-transition: .2s;
+      transition: opacity .2s;
+    }
+    
+    .slider:hover {
+      opacity: 1;
+    }
+    
+    .slider::-webkit-slider-thumb {
+      border: 1px solid #fff9;
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      border-left: none;
+      border-right: none;
+      height: 12px;
+      background: #003;
+      cursor: pointer;
+    }
+
+
     html, body {
       margin: 0px;
     }
@@ -24,7 +55,8 @@ head
     }
 
     .screen {
-      padding: 10px 10px;
+      border-radius: 2px;
+      padding: 5px 10px;
       position: relative;
       margin: 20px;
       width: 180px;
@@ -33,6 +65,18 @@ head
       transform-origin: top left;
       color: black;
       box-shadow: 8px 8px 5px rgba(0,0,0,0.5);
+    }
+    .flex-layer {
+      padding: 10px 10px;
+      display: flex;
+      flex-direction: column;
+      top: 0px;
+      left: 0px;
+      pointer-events: none;
+      height: 100%;
+      width: 100%;
+      position: absolute;
+      justify-content: flex-end;
     }
     .test {
       width: 100px;
@@ -67,10 +111,16 @@ head
       width: 100%;
       text-align: center;
     }
+    .rows.wide *:last-child {
+      text-align: right;
+    }
+    .rows.wide *:first-child {
+      text-align: left;
+    }
 
     .center { text-align: center; }
     br { line-height: 4px; }
-    h4,h3,h2,h1 { margin: 4px;}
+    h5, h4,h3,h2,h1 { margin: 4px;}
     p { font-size: 9px; margin: 3px;}
     .s {font-size: 7px; }
     br.dx { line-height: 2em; }
@@ -80,34 +130,39 @@ body
     .flexer
       .screen
         h3.center Main
-        h4 Stats
-        p Poms Done/Remaining: 8/18
-        p Short: A2.M3.W3 : S2.1.B2
+        p.center A2.M3.W3 : S2.1.B2
+        br
+        p Poms Done: 8/18
         p To Saturation: 10:00 
         p Blocks: 20: 25 30 35
         br
-        h4 Active Topics
+        h5 Active Topics
         p Code
         p Metier
         p Demi
         p Journal Writing
         p Sprint Planning
         br
-        h4 Active Book
+        h5 Active Book
         p Pro TypeScript
         p Effective TypeScript
         p On Anarchism
         p SitAnth
+        .flex-layer
+          .rows
+            h3 History
+            h3 Config
       .screen
         h3.center Start from Book
         p.center SitAnth
-        h4 Stats
+        br
         p Started On: 11/4/2020
         p Progress: 34% (100/250)
         p Avg Rate: 2% per pom
-        p Accuracy: Missing Records
         p Poms Left: 10/50
         p End: 11/27/2020-12/8/2020
+        p Accuracy: Missing Records
+        br
         h4 Summaries
         p.s 1-4% lettrist psychogeography, guide to detournment
         p.s 4-6% future of detournement, Alba conf, Jorn's great intro
@@ -118,26 +173,55 @@ body
             h2 1 2 3 4
           .rows
             h2 Start
-
       .screen 
         h3.center Start from Topic
+        p.center Metier
+        br
+        p First Done: 11/4/2020
+        p Average Per Week: 4
+        p Average Per Arc: 20
+        p Poms Left on Quota: 4/10
+        br
+        h4 Summaries
+        p.s short journal entry, start making design protos in pug
+        p.s goofily make a draggable element (2)
+        p.s do "passive loop" from design diagram in basic list
+        p.s keep attending design; add other views, flex elements
+        p.s fill in start from book, set weights, running books 
+        .flex-layer
+          .rows 
+            h2 1 2 3 4
+          .rows
+            h2 Start
       .screen
         h3.center Set Weights
         h4 Books
         p Pro TypeScript
+        input.slider(type="range" min="0" max="4")
         p Effective TypeScript
+        input.slider(type="range" min="0" max="4")
         p On Anarchism
-        p SitAnth
+        input.slider(type="range" min="0" max="4")
         h4 Topics
         p Code
+        input.slider(type="range" min="0" max="4")
         p Metier
-        p Demi
+        input.slider(type="range" min="0" max="4")
         p Journal Writing
+        input.slider(type="range" min="0" max="4")
         p Sprint Planning
+        input.slider(type="range" min="0" max="4")
+      mixin timer-progress
+        .flex-layer
+          h1.center 23:43:12
+          h2.center - 4 + 
+          br.dx
+          .rows
+            h2 Pause
+            h2 End
       .screen 
         h3.center Running Book
         p.center SitAnth
-        h4 Session
         p Poms: 4
         p Start Time: 13:25
         p End: 15:30-15:50
@@ -145,15 +229,49 @@ body
         p Poms Left: 10
         p Pauses: 2
         p Pause Time: 5:20
-
-        .flex-layer
-          h1.center 23:43:12
-          br.dx
-          .rows
-            h2 Pause
-            h2 End
-      .screen 
+        +timer-progress
+      .screen
         h3.center Running Topic
+        p.center SitAnth
+        p Poms: 4
+        p Start Time: 13:25
+        p End: 15:30-15:50
+        p Reading Range: 36%-39%
+        p Poms Left: 10
+        p Pauses: 2
+        p Pause Time: 5:20
+        +timer-progress
+      mixin setting(label)
+        .rows.wide 
+          p= label
+          p On/Off
+      mixin notifications
+        +setting('Hourly Chime')
+        +setting('Block Chime')
+        +setting('Saturation')
+      .screen
+        h3.center Configuration
+        br
+        h4 Notifications
+        h5 Desktop
+          +notifications
+        h5 Mobile
+          +notifications
+        h5 Browser 
+          +notifications
+      .screen
+        h3.center History
+        p.center A2.M3.W3 : S2.1.B2
+        h4 Arc
+        h4 Month
+        h4 Week
+        h4 Day
+        .flex-layer
+          .rows
+            h1 <
+            h1 >
+        
+
   script.
     const $ = document.querySelector.bind(document);
     const $$ = document.querySelectorAll.bind(document);
