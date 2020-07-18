@@ -1,0 +1,111 @@
+<head><script>const screenWords = [1,2];</script><style>html, body {
+  margin: 0px;
+}
+* {
+  color: white;
+  font-weight: normal;
+  box-sizing: border-box;
+}
+.container {
+  padding: 20px;
+  color: white;
+  height: 100%;
+  width: 100%;
+  font-family: monospace;
+  background: #8ab;
+}
+.flexer {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.screen {
+  padding: 10px 10px;
+  position: relative;
+  margin: 20px;
+  width: 180px;
+  height: 320px;
+  background: radial-gradient(#c88, #003);
+  transform-origin: top left;
+  color: black;
+  box-shadow: 8px 8px 5px rgba(0,0,0,0.5);
+}
+.test {
+  width: 100px;
+  height: 100px;
+  background: red;
+}
+.drag {
+  position: absolute;
+}
+.start-stop {
+
+}
+.flex-layer {
+  padding: 10px 10px;
+  display: flex;
+  flex-direction: column;
+  top: 0px;
+  left: 0px;
+  pointer-events: none;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  justify-content: flex-end;
+}
+.flex-layer * {
+  pointer-events: initial;
+}
+.rows {
+  display: flex;
+}
+.rows * {
+  width: 100%;
+  text-align: center;
+}
+
+.center { text-align: center; }
+br { line-height: 4px; }
+h4,h3,h2,h1 { margin: 4px;}
+p { font-size: 9px; margin: 3px;}
+.s {font-size: 7px; }
+br.dx { line-height: 2em; }</style></head><body><div class="container"><div class="flexer"><div class="screen"><h3 class="center">Main</h3><h4>Stats</h4><p>Poms Done/Remaining: 8/18</p><p>Short: A2.M3.W3 : S2.1.B2</p><p>To Saturation: 10:00 </p><p>Blocks: 20: 25 30 35</p><br/><h4>Active Topics</h4><p>Code</p><p>Metier</p><p>Demi</p><p>Journal Writing</p><p>Sprint Planning</p><br/><h4>Active Book</h4><p>Pro TypeScript</p><p>Effective TypeScript</p><p>On Anarchism</p><p>SitAnth</p></div><div class="screen"><h3 class="center">Start from Book</h3><p class="center">SitAnth</p><h4>Stats</h4><p>Started On: 11/4/2020</p><p>Progress: 34% (100/250)</p><p>Avg Rate: 2% per pom</p><p>Accuracy: Missing Records</p><p>Poms Left: 10/50</p><p>End: 11/27/2020-12/8/2020</p><h4>Summaries</h4><p class="s">1-4% lettrist psychogeography, guide to detournment</p><p class="s">4-6% future of detournement, Alba conf, Jorn's great intro</p><p class="s">6-16% on exclusion, 4th conference, insurrection</p><p class="s">16-17%, Vaneigem polemics on everyday life, delivered on tape</p><div class="flex-layer"><div class="rows"> <h2>1 2 3 4</h2></div><div class="rows"><h2>Start</h2></div></div></div><div class="screen"> <h3 class="center">Start from Topic</h3></div><div class="screen"><h3 class="center">Set Weights</h3><h4>Books</h4><p>Pro TypeScript</p><p>Effective TypeScript</p><p>On Anarchism</p><p>SitAnth</p><h4>Topics</h4><p>Code</p><p>Metier</p><p>Demi</p><p>Journal Writing</p><p>Sprint Planning</p></div><div class="screen"> <h3 class="center">Running Book</h3><p class="center">SitAnth</p><h4>Session</h4><p>Poms: 4</p><p>Start Time: 13:25</p><p>End: 15:30-15:50</p><p>Reading Range: 36%-39%</p><p>Poms Left: 10</p><p>Pauses: 2</p><p>Pause Time: 5:20</p><div class="flex-layer"><h1 class="center">23:43:12</h1><br class="dx"/><div class="rows"><h2>Pause</h2><h2>End</h2></div></div></div><div class="screen"> <h3 class="center">Running Topic</h3></div></div></div><script>const $ = document.querySelector.bind(document);
+const $$ = document.querySelectorAll.bind(document);
+
+const d = {
+  dragging: false,
+  offsetX: null,
+  offsetY: null,
+};
+
+document.addEventListener('mousedown', ({ target: dragging, offsetX, offsetY }) => {
+  if (dragging.classList.contains('drag')) {
+    Object.assign(d, { dragging, offsetX, offsetY });
+    console.log('YES')
+  }
+});
+
+document.addEventListener('mouseup', (e) => {
+  d.dragging = false;
+  d.offsetX = d.offsetY = null;
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!d.dragging) return;
+  const { clientX, clientY } = e;
+  const {
+    top, left, bottom, right,
+  } = d.dragging.parentNode.getBoundingClientRect();
+  const x = clientX - left - d.offsetX;
+  const y = clientY - top - d.offsetY;
+
+  const sameX =  x === parseInt(d.dragging.style.left);
+  const sameY =  y === parseInt(d.dragging.style.top);
+  if (sameX && sameY) return;
+  
+  Object.assign(d.dragging.style, {
+    left: x,
+    top: y,
+  });
+
+});</script></body>

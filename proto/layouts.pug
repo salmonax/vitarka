@@ -1,0 +1,198 @@
+head
+  script.
+    const screenWords = [1,2];
+  style.
+    html, body {
+      margin: 0px;
+    }
+    * {
+      color: white;
+      font-weight: normal;
+      box-sizing: border-box;
+    }
+    .container {
+      padding: 20px;
+      color: white;
+      height: 100%;
+      width: 100%;
+      font-family: monospace;
+      background: #8ab;
+    }
+    .flexer {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .screen {
+      padding: 10px 10px;
+      position: relative;
+      margin: 20px;
+      width: 180px;
+      height: 320px;
+      background: radial-gradient(#c88, #003);
+      transform-origin: top left;
+      color: black;
+      box-shadow: 8px 8px 5px rgba(0,0,0,0.5);
+    }
+    .test {
+      width: 100px;
+      height: 100px;
+      background: red;
+    }
+    .drag {
+      position: absolute;
+    }
+    .start-stop {
+
+    }
+    .flex-layer {
+      padding: 10px 10px;
+      display: flex;
+      flex-direction: column;
+      top: 0px;
+      left: 0px;
+      pointer-events: none;
+      height: 100%;
+      width: 100%;
+      position: absolute;
+      justify-content: flex-end;
+    }
+    .flex-layer * {
+      pointer-events: initial;
+    }
+    .rows {
+      display: flex;
+    }
+    .rows * {
+      width: 100%;
+      text-align: center;
+    }
+
+    .center { text-align: center; }
+    br { line-height: 4px; }
+    h4,h3,h2,h1 { margin: 4px;}
+    p { font-size: 9px; margin: 3px;}
+    .s {font-size: 7px; }
+    br.dx { line-height: 2em; }
+body
+  .container
+    
+    .flexer
+      .screen
+        h3.center Main
+        h4 Stats
+        p Poms Done/Remaining: 8/18
+        p Short: A2.M3.W3 : S2.1.B2
+        p To Saturation: 10:00 
+        p Blocks: 20: 25 30 35
+        br
+        h4 Active Topics
+        p Code
+        p Metier
+        p Demi
+        p Journal Writing
+        p Sprint Planning
+        br
+        h4 Active Book
+        p Pro TypeScript
+        p Effective TypeScript
+        p On Anarchism
+        p SitAnth
+      .screen
+        h3.center Start from Book
+        p.center SitAnth
+        h4 Stats
+        p Started On: 11/4/2020
+        p Progress: 34% (100/250)
+        p Avg Rate: 2% per pom
+        p Accuracy: Missing Records
+        p Poms Left: 10/50
+        p End: 11/27/2020-12/8/2020
+        h4 Summaries
+        p.s 1-4% lettrist psychogeography, guide to detournment
+        p.s 4-6% future of detournement, Alba conf, Jorn's great intro
+        p.s 6-16% on exclusion, 4th conference, insurrection
+        p.s 16-17%, Vaneigem polemics on everyday life, delivered on tape
+        .flex-layer
+          .rows 
+            h2 1 2 3 4
+          .rows
+            h2 Start
+
+      .screen 
+        h3.center Start from Topic
+      .screen
+        h3.center Set Weights
+        h4 Books
+        p Pro TypeScript
+        p Effective TypeScript
+        p On Anarchism
+        p SitAnth
+        h4 Topics
+        p Code
+        p Metier
+        p Demi
+        p Journal Writing
+        p Sprint Planning
+      .screen 
+        h3.center Running Book
+        p.center SitAnth
+        h4 Session
+        p Poms: 4
+        p Start Time: 13:25
+        p End: 15:30-15:50
+        p Reading Range: 36%-39%
+        p Poms Left: 10
+        p Pauses: 2
+        p Pause Time: 5:20
+
+        .flex-layer
+          h1.center 23:43:12
+          br.dx
+          .rows
+            h2 Pause
+            h2 End
+      .screen 
+        h3.center Running Topic
+  script.
+    const $ = document.querySelector.bind(document);
+    const $$ = document.querySelectorAll.bind(document);
+
+    const d = {
+      dragging: false,
+      offsetX: null,
+      offsetY: null,
+    };
+
+    document.addEventListener('mousedown', ({ target: dragging, offsetX, offsetY }) => {
+      if (dragging.classList.contains('drag')) {
+        Object.assign(d, { dragging, offsetX, offsetY });
+        console.log('YES')
+      }
+    });
+
+    document.addEventListener('mouseup', (e) => {
+      d.dragging = false;
+      d.offsetX = d.offsetY = null;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!d.dragging) return;
+      const { clientX, clientY } = e;
+      const {
+        top, left, bottom, right,
+      } = d.dragging.parentNode.getBoundingClientRect();
+      const x = clientX - left - d.offsetX;
+      const y = clientY - top - d.offsetY;
+
+      const sameX =  x === parseInt(d.dragging.style.left);
+      const sameY =  y === parseInt(d.dragging.style.top);
+      if (sameX && sameY) return;
+      
+      Object.assign(d.dragging.style, {
+        left: x,
+        top: y,
+      });
+
+    });
+
