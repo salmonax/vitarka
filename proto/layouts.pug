@@ -19,6 +19,27 @@ head
     .slider:hover {
       opacity: 1;
     }
+    input.done::placeholder {
+      color: lightgrey;
+    }
+    input.done {
+      font-size: 7px;
+      width: calc(100% + 20px);
+      margin: 0px -10px;
+      margin-bottom: -11px;
+      padding: 10 4px;
+      border-style: solid;
+      border-radius: 1px;
+      border: 1px solid #fff9;
+      border-left: 0px;
+      border-right: 0px;
+      border-bottom: 0px;
+      background: #ddd8;
+      outline: none;
+    }
+    input.done:focus {
+      outline: none
+    }
     
     .slider::-webkit-slider-thumb {
       border: 1px solid #fff9;
@@ -60,7 +81,7 @@ head
       position: relative;
       margin: 20px;
       width: 180px;
-      height: 320px;
+      height: 330px;
       background: radial-gradient(#c88, #003);
       transform-origin: top left;
       color: black;
@@ -104,8 +125,12 @@ head
     .flex-layer * {
       pointer-events: initial;
     }
+    .flex-layer.kb-droid {
+      padding-bottom: 130px;
+    }
     .rows {
       display: flex;
+      align-items: center;
     }
     .rows * {
       width: 100%;
@@ -116,6 +141,19 @@ head
     }
     .rows.wide *:first-child {
       text-align: left;
+    }
+    .kb-droid {
+      position: absolute;
+      bottom: 0px;
+      left: 0px;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: url(img/kb-droid.png);
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: bottom right;
+      z-index: 0;
     }
 
     .center { text-align: center; }
@@ -132,8 +170,8 @@ body
         h3.center Main
         p.center A2.M3.W3 : S2.1.B2
         br
-        p Poms Done: 8/18
-        p To Saturation: 10:00 
+        p Poms Done Today: 8
+        p Saturation: 10:00 
         p Blocks: 20: 25 30 35
         br
         h5 Active Topics
@@ -157,7 +195,7 @@ body
         p.center SitAnth
         br
         p Started On: 11/4/2020
-        p Progress: 34% (100/250)
+        p Progress: 17% (100/250)
         p Avg Rate: 2% per pom
         p Poms Left: 10/50
         p End: 11/27/2020-12/8/2020
@@ -217,26 +255,27 @@ body
           h2.center - 4 + 
           br.dx
           .rows
-            h2 Pause
-            h2 End
+            h3 Break
+            h3 &nbspPause
+            h3 &nbspEnd
       .screen 
         h3.center Running Book
         p.center SitAnth
         p Poms: 4
         p Start Time: 13:25
         p End: 15:30-15:50
-        p Reading Range: 36%-39%
+        p Reading Range: 18%-20%
         p Poms Left: 10
         p Pauses: 2
         p Pause Time: 5:20
         +timer-progress
       .screen
         h3.center Running Topic
-        p.center SitAnth
+        p.center Journal Writing
         p Poms: 4
         p Start Time: 13:25
         p End: 15:30-15:50
-        p Reading Range: 36%-39%
+        p Reading Range: 18%-20%
         p Poms Left: 10
         p Pauses: 2
         p Pause Time: 5:20
@@ -259,6 +298,8 @@ body
           +notifications
         h5 Browser 
           +notifications
+        h4 Misc
+          +setting('Allow Pauses')
       .screen
         h3.center History
         p.center A2.M3.W3 : S2.1.B2
@@ -270,6 +311,26 @@ body
           .rows
             h1 <
             h1 >
+      .screen
+        h3.center Book Complete
+        p.center SitAnth
+        p Poms: 4
+        p Elapsed: 110 minutes
+        p Pauses: 3
+        p Pause Time: 15:20
+
+        br
+        br.dx
+        .flex-layer.kb-droid
+          .rows
+            h2 18%
+            h1 19%
+            h2 20%
+          br
+          input.done(type="text" minlength="0" maxlength="50" spellcheck="false" placeholder="scopes, abstract classes, generics, constraints 5/7")
+          .kb-droid
+      .screen
+        h3.center Topic Complete
         
 
   script.
