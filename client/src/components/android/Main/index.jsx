@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { osberver, inject, computed, observer } from 'mobx-react';
+import { inject, observer } from 'mobx-react';
 import { withRouter } from 'react-router';
 import { observable, action } from 'mobx';
 
@@ -11,9 +11,9 @@ const TimerProgress = props => pug`
     h2.center - 4 + 
     br.dx
     .rows
-      h3 Break
-      h3 &nbspPause
-      h3(onClick=${props.end}) &nbspEnd
+      h1 Break
+      h1 &nbspPause
+      h1(onClick=${props.end}) &nbspEnd
 `;
 
 const Setting = ({ label })=> pug`
@@ -31,7 +31,7 @@ const NotificationSettings = props => pug`
 @withRouter @inject('common') @observer
 export default class Main extends Component {
   @observable path = 'main'
-  @observable selected = null
+  @observable state
 
   @observable books = `
     Pro TypeScript
@@ -47,14 +47,24 @@ export default class Main extends Component {
     Sprint Planning
   `.trim().split('\n').map(n => n.trim())
 
-  @action.bound navTo(path, selected = this.selected) {
+  @action.bound navTo(path, state,) {
+    this.loadPath(path, state);
+    window.history.pushState(undefined, undefined, path);
+  }
+
+  @action.bound loadPath(path = window.location.pathname, state) {
+    path = path.substr(1);
+    if (!this[path]) path = 'main';
     this.path = path;
-    this.selected = selected;
+    this.state = state;
   }
 
   componentDidMount() {
     window.main = this;
+    this.loadPath();
+    window.addEventListener('popstate', (e) => this.loadPath());
   }
+
   get main() {
     return pug`
       .screen
@@ -69,26 +79,26 @@ export default class Main extends Component {
         each topic in this.topics.toJS()
           h4(
             key=topic
-            onClick=${e => this.navTo('topicStart', topic)}
+            onClick=${e => this.navTo('/topic_start', { topic })}
           )= topic
         br
         h3 Active Books
         each book in this.books.toJS()
           h4(
             key=book
-            onClick=${e => this.navTo('bookStart', book)}
+            onClick=${e => this.navTo('/book_start', { book })}
           )= book
         .flex-layer
           .rows
-            h3 History
-            h3 Config
+            h1 History
+            h1 Config
     `
   }
 
-  get bookStart() {
+  get book_start() {
     return pug`
       .screen.start.book
-        h3.center Start from Book
+        h1.center Start from Book
         p.center SitAnth
         br
         p Started On: 11/4/2020
@@ -98,24 +108,24 @@ export default class Main extends Component {
         p End: 11/27/2020-12/8/2020
         p Accuracy: Missing Records
         br
-        h4 Summaries
+        h3 Summaries
         p.s 1-4% lettrist psychogeography, guide to detournment
         p.s 4-6% future of detournement, Alba conf, Jorn's great intro
         p.s 6-16% on exclusion, 4th conference, insurrection
         p.s 16-17%, Vaneigem polemics on everyday life, delivered on tape
         .flex-layer
           .rows 
-            h2 1 2 3 4
+            h1 1 2 3 4
           .rows
-            h2(
+            h1(
               onClick=${
-                e => this.navTo('bookRunning')
+                e => this.navTo('/book_running')
               }
             ) Start
     `;
   }
 
-  get bookRunning() {
+  get book_running() {
     return pug`
       .screen.running.book
         h3.center Running Book
@@ -128,16 +138,16 @@ export default class Main extends Component {
         p Pauses: 2
         p Pause Time: 5:20
         TimerProgress(
-          end=${e => this.navTo('bookComplete')}
+          end=${e => this.navTo('/book_complete')}
         )
     `;
 
   }
 
-  get bookComplete() {
+  get book_complete() {
     return pug`
       .screen.complete.book
-        h3.center Book Complete
+        h1.center Book Complete
         p.center SitAnth
         p Poms: 4
         p Elapsed: 110 minutes
@@ -146,14 +156,13 @@ export default class Main extends Component {
         
         br
         br.dx
-        .flex-layer.kb-droid
+        .flex-layer
           .rows
             h2 18%
             h1 19%
             h2 20%
           br
           input.done(type="text" minLength="0" maxLength="50" spellCheck="false" placeholder="scopes, abstract classes, generics, constraints 5/7")
-          .kb-droid
     `;
   }
 

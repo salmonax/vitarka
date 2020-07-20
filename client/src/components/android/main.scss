@@ -2,9 +2,9 @@
   -webkit-appearance: none;
   width: 90%;
   margin-left: 5%;
-  height: 12px;
+  height: 24px;
   border: 1px solid #fff9;
-  border-radius: 1px;
+  border-radius: 2px;
   background: #ddd8;
   outline: none;
   opacity: 0.7;
@@ -19,13 +19,13 @@ input.done::placeholder {
   color: lightgrey;
 }
 input.done {
-  font-size: 7px;
-  width: calc(100% + 20px);
+  font-size: 14px;
+  width: calc(100% + 40px);
   margin: 0px -10px;
-  margin-bottom: -11px;
-  padding: 10 4px;
+  margin-bottom: -30px;
+  padding: 20px 8px;
   border-style: solid;
-  border-radius: 1px;
+  border-radius: 2px;
   border: 1px solid #fff9;
   border-left: 0px;
   border-right: 0px;
@@ -41,17 +41,17 @@ input.done:focus {
   border: 1px solid #fff9;
   -webkit-appearance: none;
   appearance: none;
-  width: 12px;
+  width: 24px;
   border-left: none;
   border-right: none;
-  height: 12px;
+  height: 24px;
   background: #003;
   cursor: pointer;
 }
 
 
 html, body {
-  font-size: 1em;
+  font-size: 1.0em;
   margin: 0px;
 }
 body {
@@ -63,7 +63,7 @@ body {
   box-sizing: border-box;
 }
 .container {
-  padding: 20px;
+  padding: 40px;
   color: white;
   height: 100%;
   width: 100%;
@@ -76,8 +76,8 @@ body {
 }
 
 .screen {
-  border-radius: 2px;
-  padding: 5px 10px;
+  border-radius: 4px;
+  padding: 10px 20px;
   position: relative;
   margin: 0px;
   width: 100vw;
@@ -85,10 +85,10 @@ body {
   background: radial-gradient(#c88, #003);
   transform-origin: top left;
   color: black;
-  box-shadow: 8px 8px 5px rgba(0,0,0,0.5);
+  box-shadow: 16px 16px 10px rgba(0,0,0,0.5);
 }
 .flex-layer {
-  padding: 10px 10px;
+  padding: 20px 20px;
   display: flex;
   flex-direction: column;
   top: 0px;
@@ -100,8 +100,8 @@ body {
   justify-content: flex-end;
 }
 .test {
-  width: 100px;
-  height: 100px;
+  width: 200px;
+  height: 200px;
   background: red;
 }
 .drag {
@@ -111,7 +111,7 @@ body {
 
 }
 .flex-layer {
-  padding: 10px 10px;
+  padding: 30px 10px;
   display: flex;
   flex-direction: column;
   top: 0px;
@@ -157,8 +157,9 @@ body {
 }
 
 .center { text-align: center; }
-br { line-height: 4px; }
+br { line-height: 8px; }
 h5, h4,h3,h2,h1 { margin: 4px;}
-p { font-size: 9px; margin: 3px;}
-.s {font-size: 7px; }
+p { margin: 6px; }
+// p { font-size: 9px; margin: 6px;}
+.s {font-size: 11px; }
 br.dx { line-height: 2em; }
