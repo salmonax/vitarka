@@ -24,13 +24,12 @@ import {
 import Timer from 'Timer';
 import BookCovers from 'BookCovers';
 import LazyInput from 'LazyInput';
+import AndroidMain from 'android/Main';
 
 const googleKey = process.env.GOOGLE_BOOKS;
 window.axios = axios;
 
 import './index.scss';
-
-
 
 import DiegesisWidget from 'DiegesisWidget';
 
@@ -84,7 +83,7 @@ export default class App extends Component {
   _mobileLayout() {
     return (
       <div style={{color: 'white'}}>
-        <LazyInput/>
+        <AndroidMain/>
       </div>
 
     );
@@ -95,9 +94,9 @@ export default class App extends Component {
     const { common } = this.props;
     console.log('___rendered app___');
 
-    // if (this._checkAgent() === 'AndroidPhone') {
-    //   return this._mobileLayout();
-    // }
+    if (this._checkAgent() === 'AndroidPhone') {
+      return this._mobileLayout();
+    }
     return(
       <div style={{color: 'white'}}>
         <div className="fuck">

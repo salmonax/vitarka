@@ -85,8 +85,8 @@ const config = {
     contentBase: path.join(__dirname, 'client/src/'),
     port: 3000,
     proxy: {
-      '/api': { target: 'https://localhost:3001', secure: false },
-      '/static': { target: 'https://localhost:3001', secure: false },
+      '/api': { target: 'http://localhost:3001', secure: false },
+      '/static': { target: 'http://localhost:3001', secure: false },
       // '/api': { target: 'http://localhost:3001', secure: false },
       // '/static': { target: 'http://localhost:3001', secure: false },
       // '/static': { target: 'ws://localhost:3001', ws: true }

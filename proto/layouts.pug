@@ -166,7 +166,7 @@ body
   .container
     
     .flexer
-      .screen
+      .screen.main
         h3.center Main
         p.center A2.M3.W3 : S2.1.B2
         br
@@ -190,7 +190,7 @@ body
           .rows
             h3 History
             h3 Config
-      .screen
+      .screen.start.book
         h3.center Start from Book
         p.center SitAnth
         br
@@ -211,7 +211,7 @@ body
             h2 1 2 3 4
           .rows
             h2 Start
-      .screen 
+      .screen.start.topic
         h3.center Start from Topic
         p.center Metier
         br
@@ -231,7 +231,7 @@ body
             h2 1 2 3 4
           .rows
             h2 Start
-      .screen
+      .screen.set-weights
         h3.center Set Weights
         h4 Books
         p Pro TypeScript
@@ -258,7 +258,7 @@ body
             h3 Break
             h3 &nbspPause
             h3 &nbspEnd
-      .screen 
+      .screen.running.book
         h3.center Running Book
         p.center SitAnth
         p Poms: 4
@@ -269,7 +269,7 @@ body
         p Pauses: 2
         p Pause Time: 5:20
         +timer-progress
-      .screen
+      .screen.running.topic
         h3.center Running Topic
         p.center Journal Writing
         p Poms: 4
@@ -288,7 +288,7 @@ body
         +setting('Hourly Chime')
         +setting('Block Chime')
         +setting('Saturation')
-      .screen
+      .screen.configuration
         h3.center Configuration
         br
         h4 Notifications
@@ -300,7 +300,7 @@ body
           +notifications
         h4 Misc
           +setting('Allow Pauses')
-      .screen
+      .screen.history
         h3.center History
         p.center A2.M3.W3 : S2.1.B2
         h4 Arc
@@ -311,7 +311,7 @@ body
           .rows
             h1 <
             h1 >
-      .screen
+      .screen.complete.book
         h3.center Book Complete
         p.center SitAnth
         p Poms: 4
@@ -329,7 +329,7 @@ body
           br
           input.done(type="text" minlength="0" maxlength="50" spellcheck="false" placeholder="scopes, abstract classes, generics, constraints 5/7")
           .kb-droid
-      .screen
+      .screen.complete.topic
         h3.center Topic Complete
         
 
