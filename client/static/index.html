@@ -43,13 +43,20 @@
     <!-- DROPBOX: REPLACE WITH NPM -->
     <script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
 
-<!--     <script>
-        const image = new Image();
-        // image.src = '/static/logo-3x-lineless.png';
-        image.src = '/static/fake.png' // DELETEME
-    </script> -->
-
-<!--     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css"> -->
+    <!-- LEGACY BINDU DEPS: REBUILD AND ELIMINATE ASAP -->
+    <script
+        src="https://code.jquery.com/jquery-2.1.0.min.js"
+        integrity="sha256-8oQ1OnzE2X9v4gpRVRMb1DWHoPHJilbur1LP9ykQ9H0="
+        crossorigin="anonymous">
+    </script>
+    <script src="/bindu/js/helpers.js" defer></script>
+    <script src="/bindu/js/utils.js" defer></script>
+    <script src="/bindu/js/parsley.js" defer></script>
+    <script src="/bindu/js/journal.js" defer></script>
+    <script src="/bindu/js/calendarView.js" defer></script>
+    <script src="/bindu/js/calendarController.js" defer></script>
+    <script src="/bindu/js/lagom.js" defer></script>
+    <link href="/bindu/css/lagom.css" rel="stylesheet"></link>
   </head>
   <style>
     body {
