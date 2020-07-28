@@ -1,25 +1,36 @@
-// var lastYear = $.get('/2015'),
-var lastYear = '',
-    thisYear = $.get('/2017'),
-    journalRaw = $.get('/journal');
+// startBindu();
 
-//TODO: get view rendered BEFORE getting the data
-$.when(lastYear,thisYear,journalRaw).done(function (lastYear, thisYear,journalRaw) {
-    var model = initModel(lastYear,thisYear,journalRaw),
-        view = calendarView.init(model);
-    calendarController.init("#calendar",view);
+// Vitarka: wrapped this to make clearer that it inits everything
+// (was originally top-level)
+function startBindu(parsleyData) {
+  // Not sure if these were closured anywhere, so attaching
+  // to window to preserve prior behavior
+  window.lastYear = '';
+  window.thisYear = '';// $.get('/2017');
+  window.journalRaw = '';//$.get('/journal');
 
-  }
-);
+  //TODO: get view rendered BEFORE getting the data
+  // $.when(lastYear,thisYear,journalRaw).done(function (lastYear, thisYear,journalRaw, parsleyData) {
+  var model = initModel(lastYear,thisYear,journalRaw, parsleyData),
+      view = calendarView.init(model);
+  calendarController.init("#calendar",view);
+  window.$view = view
+    // }
+  // ); 
+}
+
 
 //TODO: rework this
-function initModel(lastYear,thisYear,journalRaw) {
-  var pomsheet = lastYear[0] + "\n" + thisYear[0];
+function initModel(lastYear,thisYear,journalRaw, parsleyData) {
+  // var pomsheet = lastYear[0] + "\n" + thisYear[0];
 
-  var pomsheetLines = pomsheet.split(/\n/),
-      journalLines = journalRaw[0].split("\n");
+  // var pomsheetLines = pomsheet.split(/\n/),
+      journalLines = journalRaw[0] ? journalRaw[0].split("\n") : [];
 
-  var parsley = buildParsleyData(pomsheetLines);
+  var parsley = parsleyData;//buildParsleyData(pomsheetLines);
+      
+      // DANGER, DANGER: this "works", but calendarView is using
+      // journal.
       journal = buildJournal(journalLines);  
 
   return {

@@ -40,6 +40,14 @@ export default class Common {
 
   @observable selectedBook = ''
 
+  _waitForParsleyResolve = null
+  _waitForParsleyPromise = new Promise((r, j) => this._waitForParsleyResolve = r)
+
+  async waitForParsley() {
+    await this._waitForParsleyPromise;
+    return this.parsleyData;
+  }
+
   @action loginAndParsley() {
     this.rawPomsheet = 'loginDropbox called';
     let _resolve;
@@ -52,7 +60,7 @@ export default class Common {
         this.onFirstPomsheetChunk,
         result => {
           // the strings are just for debugging outputs
-          _resolve(this.onPomsheetUpdate(result, 'loginAndParlsey'), 'loginAndParsley');
+          _resolve(this.onPomsheetUpdate(result, 'loginAndParsley'), 'loginAndParsley');
         },
         _ => this.startNetworkHeartbeat()
       );
@@ -68,8 +76,11 @@ export default class Common {
       this._parsleyCbs.push(cb);
     }
   }
+  // ToDo: This isn't popping them, what the hell?
   runParsleyCallbacks(parsleyData) {
     this._parsleyCbs.forEach(func => func(parsleyData));
+    // Think this is correct?
+    // this._parsleyCbs = [];
   }
 
 
@@ -89,6 +100,7 @@ export default class Common {
     });
   }
 
+
   @action.bound onFirstPomsheetChunk(text) {
     this.updatedOnFocus = 'I did it! ' + Date.now();
     console.log('called onFirstPomsheetChunk');
@@ -98,6 +110,9 @@ export default class Common {
     this.diegesis = this.getDiegesis();
   }
 
+  // These functions are misnamed; this should be "receivedPomsheet" b/c
+  // it doesn't actually take any sort of callback.
+  // It's called in several contexts, but always when the pomsheet is done loading.
   @action.bound onPomsheetUpdate(result, caller) {
     console.warn('Caller: ' + caller);
     const rawPomsheet = result.file; // should be result.text
@@ -107,7 +122,7 @@ export default class Common {
     this.parsleyData = ParsleyService.buildParsleyData(rawPomsheet);
     this.pomsToday = this.pomsDaysAgo(0);
     this.diegesis = this.getDiegesis();
-
+    this._waitForParsleyResolve();
     this.runParsleyCallbacks(this.parsleyData);
     return this.parsleyData;
   }

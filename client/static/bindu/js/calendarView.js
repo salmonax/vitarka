@@ -11,12 +11,12 @@
 /* SECOND BATCH:
 
 1. Get all event definitions moved into calendarController(), rejiggering things as needed
-2. 
-
 
 */
 
 
+// START makeshift router event
+// Why is this here, though?
 window.route = function route(loc) {
   window.dispatchEvent(new CustomEvent('en-route', { 
     detail: { 
@@ -29,6 +29,7 @@ window.route = function route(loc) {
 window.addEventListener('en-route', e => {
   console.log(e.detail.newLocation)
 })
+// END makeshift router
 
 
 var calendarView = function() {  
@@ -69,8 +70,11 @@ var calendarView = function() {
       for (var i = 0; i < 7; i++) {
         currentDay = startDay+i;
         currentDate.setDate(currentDay);
+
+        // DANGER, DANGER: CHANGE THIS! There *is no journal*
         startHour = journal.dayStartHour(currentDate);
-        //Warning: magic closure var. Might as well start marking them.
+
+        //Warning: magic closure var. NEED to start marking them.
         if (typeof startHour == 'number' && currentDay <= daysInMonth) {
           startHours.push(startHour);
         }
@@ -1101,8 +1105,8 @@ var calendarView = function() {
         if ($("#task-details").attr("class") != "show-task") {
           // p(latestStartDate);
           //WARNING: latestStartDate is closured and depends on being called after the calendar has been drawn!!
-          console.log(time.toLocaleString())
-          console.log(latestStartDate.toLocaleString())
+          // console.log(time.toLocaleString())
+          // console.log(latestStartDate.toLocaleString())
           var hoursSinceStart = Math.floor((time.getTime()-latestStartDate.getTime())/(1000*60*60));
           // var hoursSinceStart = time.getHours()-todayStartHour;
           var currentPeriod = Math.floor(hoursSinceStart/hoursInPeriod)+1;

@@ -25,6 +25,8 @@ import Timer from 'Timer';
 import BookCovers from 'BookCovers';
 import LazyInput from 'LazyInput';
 import AndroidMain from 'android/Main';
+import Bindu from 'Bindu';
+
 
 const googleKey = process.env.GOOGLE_BOOKS;
 window.axios = axios;
@@ -97,6 +99,11 @@ export default class App extends Component {
     if (this._checkAgent() === 'AndroidPhone') {
       return this._mobileLayout();
     }
+
+    return(
+      <Bindu/>
+    );
+
     return(
       <div style={{color: 'white'}}>
         <div className="fuck">

@@ -73,6 +73,7 @@ const config = {
     new Dotenv(),
   ],
   devServer: {
+    watchContentBase: true,
     watchOptions: {
       ignored: /node_modules/
     },
@@ -82,11 +83,11 @@ const config = {
       excludeModules: /webpack/
     },
     inline: true,
-    contentBase: path.join(__dirname, 'client/src/'),
+    contentBase: path.join(__dirname, 'client/'),
     port: 3000,
     proxy: {
-      '/api': { target: 'http://localhost:3001', secure: false },
-      '/static': { target: 'http://localhost:3001', secure: false },
+      // '/api': { target: 'httpπ://localhost:3001', secure: false },
+      // '/static': { target: 'http://localhost:3001', secure: false },
       // '/api': { target: 'http://localhost:3001', secure: false },
       // '/static': { target: 'http://localhost:3001', secure: false },
       // '/static': { target: 'ws://localhost:3001', ws: true }
