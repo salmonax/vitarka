@@ -3,6 +3,12 @@
 // Vitarka: wrapped this to make clearer that it inits everything
 // (was originally top-level)
 function startBindu(parsleyData) {
+  // Vitarka: Using on re-renders as well, so always clear
+  // the element. Kind of a kludge, but better
+  // than leaving in the component
+  window.$('#calendar').empty();  
+  
+
   // Not sure if these were closured anywhere, so attaching
   // to window to preserve prior behavior
   window.lastYear = '';

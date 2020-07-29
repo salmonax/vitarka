@@ -1,4 +1,4 @@
-import React, { Component } from 'React';
+import React, { Component } from 'react';
 import './index.scss';
 import { inject, observer } from 'mobx-react';
 
@@ -6,17 +6,14 @@ import { inject, observer } from 'mobx-react';
 export default class Bindu extends Component {
   componentDidMount() {
     const { common } = this.props;
-    common.waitForParsley()
-    .then(_ => {
-      window.startBindu(common.parsleyData);
-    });
     common.onParsleyData(
-      () => {
+      (parsleyData) => {
         // Quick fix, but:
         // 1. Should preserve necessary state info for each view, can do quickly in query string
         //      Example: hoursOffset for week
-        console.log('$%@#$%@#$%@#$%@#$ %@#$%@#$ %#@$ %@#$ %# um?')
-        window.$('#calendar').empty();
+        
+        // NOTE: sneakily using OUR parsley rather than the one provided by
+        // legacy Bindu code.
         window.startBindu(common.parsleyData);
       }
     );

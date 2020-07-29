@@ -40,14 +40,6 @@ export default class Common {
 
   @observable selectedBook = ''
 
-  _waitForParsleyResolve = null
-  _waitForParsleyPromise = new Promise((r, j) => this._waitForParsleyResolve = r)
-
-  async waitForParsley() {
-    await this._waitForParsleyPromise;
-    return this.parsleyData;
-  }
-
   @action loginAndParsley() {
     this.rawPomsheet = 'loginDropbox called';
     let _resolve;
@@ -70,6 +62,9 @@ export default class Common {
     console.log('logging in dropbox, or at least trying');
     return pomsheetPromise;
   }
+
+  // TODO: there's currently no way to run something only ONCE
+  // implement when/if needed.
   _parsleyCbs = []
   onParsleyData(cb) {
     if (!this._parsleyCbs.includes(cb)) {
@@ -110,7 +105,7 @@ export default class Common {
     this.diegesis = this.getDiegesis();
   }
 
-  // These functions are misnamed; this should be "receivedPomsheet" b/c
+  // These functions are misnamed; this should be "receivedPomsheet" as
   // it doesn't actually take any sort of callback.
   // It's called in several contexts, but always when the pomsheet is done loading.
   @action.bound onPomsheetUpdate(result, caller) {
@@ -122,7 +117,6 @@ export default class Common {
     this.parsleyData = ParsleyService.buildParsleyData(rawPomsheet);
     this.pomsToday = this.pomsDaysAgo(0);
     this.diegesis = this.getDiegesis();
-    this._waitForParsleyResolve();
     this.runParsleyCallbacks(this.parsleyData);
     return this.parsleyData;
   }

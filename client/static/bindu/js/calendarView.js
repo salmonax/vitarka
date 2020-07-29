@@ -118,6 +118,7 @@ var calendarView = function() {
     parsleyColors["subcategory"] = generateParsleyColors(parsley,"subcategory");
 
     var currentDate = new Date();
+    
     //used in renderWeek for Uptime
     var latestStartDate = currentDate;
 
@@ -125,22 +126,15 @@ var calendarView = function() {
     var hoursInPomDay = 15;
     var hoursInPeriod = hoursInPomDay/3;
 
-    //Quicky currentDate() debug:
-    // currentDate.setMonth(10);
-    // currentDate.setDate(29);
-    // currentDate.setYear(2015);
-
-    // var $calendar = $("#pomsheet");
     $("#calendar").append(div("cal-heading",true));
     var labels = "weeklies monthlies timebar treemap".split(' ');
-    // $calendar.append(div("cal-heading",true));
+
+    console.error('# MODIFYING THE FUCKING CALENDAR HEADER MOTHERFUCKER #######')
     $("#cal-heading").append(div(labels,false,"label"));
     $("#cal-heading").append(div("task-details",true));
     $("#calendar").append(div("cal-nav",true))
     $("#calendar").append(div("cal-body",true));
 
-    // div("previous");
-    // var hoursOffset = 12;
     var hoursOffset = 6;
     offsetCurrentDate = new Date(currentDate.getTime());
     offsetCurrentDate.setHours(offsetCurrentDate.getHours()-hoursOffset);
