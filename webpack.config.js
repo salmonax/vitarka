@@ -143,7 +143,7 @@ if (config.mode === 'production') {
     //   })
     // }
   )
-} else {
+} else if (config.mode === 'development') {
   // config.devServer.overlay = {
   //   errors: true
   // }

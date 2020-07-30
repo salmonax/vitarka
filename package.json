@@ -16,7 +16,8 @@
     "fileserver-ssl": "http-server client/ -p 3001 --ssl",
     "start": "concurrently \"npm run dev\" \"npm run fileserver\"",
     "start-ssl": "concurrently \"npm run dev-ssl\" \"npm run fileserver-ssl\"",
-    "server": "ENV=PRODUCTION PORT=3000 pm2 start ./server/bin/www"
+    "server": "ENV=PRODUCTION PORT=3000 pm2 start ./server/bin/www",
+    "build-droid": "cd native/cordova && npm run connect && npm run push && cd -"
   },
   "keywords": [],
   "author": "George A. Michel",

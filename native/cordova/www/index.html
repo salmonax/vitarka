@@ -97,7 +97,7 @@
     </body>
     <script>
         // Change and push to make work for the day!
-        const STARTING_HOUR = 21;
+        const STARTING_HOUR = 7;
 
         const $ = document.querySelector.bind(document);
         const $logo = $('.logo-container');
@@ -107,8 +107,9 @@
         const beeps = initCasio();
 
         const telemetry = new Audio('audio/telemetry.mp3');
+        const enovation = new Audio('audio/enovation.wav');
+
         $('.logo').addEventListener('touchstart', e => {
-            // $('.event.received').innerText = "FUCK YES FIRST TIME WORK";
             telemetry.play();
         });
 
@@ -117,7 +118,6 @@
         document.addEventListener('deviceready', function () {
             // Prevent backgrounMode from failing to trigger dev pushes with screen off
             // Might want to add an "isScreenOff" check
-            cordova.plugins.backgroundMode.unlock();
             cordova.plugins.backgroundMode.on('activate', () => {
                 console.log('Activated Background Mode.');
                 cordova.plugins.backgroundMode.disableWebViewOptimizations();
@@ -140,6 +140,7 @@
             // Bypass permission-request, currently only for responsiveVoice,
             // but could be an issue for other W3C specs
             cordova.plugins.Focus.focus($('#focus'));
+            enovation.play();
 
             // TODO: definitely wrap responsiveVoice in promise-related stuff that isn't terrible
             setTimeout(() => {
@@ -150,7 +151,7 @@
                 });
             }, 300);
 
-            const clearHourly = runMinutely(playMinuteBeep);
+            const clearHourly = runHourly(playCountdownBeep);
         });
             
     
@@ -159,7 +160,7 @@
             const time = (new Date(Date.now()).toLocaleTimeString([], { timeStyle: 'short' }));
             console.log('argh:', time);
             responsiveVoice.speak(
-                'The current time is ' + time, 
+                'The current time is ' + time +'. Your first block began at ' + toAMPM(STARTING_HOUR), 
                 'UK English Female',
                 {
                     onend,
@@ -167,34 +168,34 @@
             );
         }
 
-        // Hard-coding these temporarily.
-        later.setTimeout(
-                () => sayCurrentTime(
-                    () => responsiveVoice.speak('End of first hour. Good luck!', 'UK English Female')
-                ),
-                later.parse.text('at 10:33pm'),
-        );
-        later.setTimeout(
-                () => sayCurrentTime(
-                    () => responsiveVoice.speak('End of second hour. Good luck!', 'UK English Female')
-                ),
-                later.parse.text('at 11:01pm'),
-        );
+        // // Hard-coding these temporarily.
+        // later.setTimeout(
+        //         () => sayCurrentTime(
+        //             () => responsiveVoice.speak('End of first hour. Good luck!', 'UK English Female')
+        //         ),
+        //         later.parse.text('at 10:33pm'),
+        // );
+        // later.setTimeout(
+        //         () => sayCurrentTime(
+        //             () => responsiveVoice.speak('End of second hour. Good luck!', 'UK English Female')
+        //         ),
+        //         later.parse.text('at 11:01pm'),
+        // );
         
-        later.setTimeout(
-                () => sayCurrentTime(),
-                later.parse.text('at 2:01am'),
-        );
+        // later.setTimeout(
+        //         () => sayCurrentTime(),
+        //         later.parse.text('at 2:01am'),
+        // );
         
-        later.setTimeout(
-                () => sayCurrentTime(),
-                later.parse.text('at 7:01am'),
-        );
+        // later.setTimeout(
+        //         () => sayCurrentTime(),
+        //         later.parse.text('at 7:01am'),
+        // );
 
-        later.setTimeout(
-                () => sayCurrentTime(),
-                later.parse.text('at 12:01am'),
-        );;
+        // later.setTimeout(
+        //         () => sayCurrentTime(),
+        //         later.parse.text('at 12:01am'),
+        // );
     
 
         // Set a timeout that runs at the start of the next hour
@@ -211,7 +212,7 @@
                 later.parse.text(`at ${_getNextHourString()}`),
             );
             // Closure the timer variable and return a function.
-            // This way, the caller won't need to distinguish. 
+            // This way, the caller won't need to care. 
             return () => timer.clear();
             
             function _getNextHourString() {
@@ -223,6 +224,9 @@
             }
         }
         
+        // TODO: DRY these up when refactoring.
+        // Might not need minutes, but probably want it to beep every 5 minutes when doing a pom,
+        // with an analogous countdown method.
         function runMinutely(cb) {
             let timer;
             timer = later.setTimeout(
@@ -236,12 +240,12 @@
                 later.parse.text(`at ${_getNextMinuteString()}`),
             );
             // Closure the timer variable and return a function.
-            // This way, the caller won't need to distinguish. 
+            // This way, the caller won't need to care. 
             return () => timer.clear();
 
             function _getNextMinuteString() {
                 const now = new Date();
-                now.setMinutes(now.getMinutes() +1);
+                now.setMinutes(now.getMinutes() + 1);
                 now.setSeconds(0);
                 return now.toLocaleTimeString([], { timeStyle: 'short'});
             }
@@ -257,8 +261,10 @@
             );
         }
 
-        function playMinuteBeep(_beeps = beeps) {
+        function playCountdownBeep(_beeps = beeps) {
             const beepCount = getBeepCountFromHour();
+            // Randomly play the maru or batsu beep
+            // Make this depend on number of poms done, or something
             _beeps[beepCount][Math.round(Math.random()) ? 'good' : 'bad'].play();
         }
 
@@ -277,6 +283,12 @@
                 const curHour = (new Date()).getHours();
                 return (curHour < startingHour) ? curHour + 24 : curHour;
             }
+        }
+        function toAMPM(bigHours) {
+            const militaryHours = bigHours % 24;
+            const suffix = (militaryHours && militaryHours >= 12) ? 'pm' : 'am';
+            const hours = (militaryHours + 11) % 12 + 1;
+            return hours + suffix; 
         }
 
     </script>
