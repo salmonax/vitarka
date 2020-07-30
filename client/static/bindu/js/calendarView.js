@@ -72,7 +72,7 @@ var calendarView = function() {
         currentDate.setDate(currentDay);
 
         // DANGER, DANGER: CHANGE THIS! There *is no journal*
-        startHour = journal.dayStartHour(currentDate);
+        startHour = parsley.startHour(currentDate);
 
         //Warning: magic closure var. NEED to start marking them.
         if (typeof startHour == 'number' && currentDay <= daysInMonth) {
@@ -122,14 +122,13 @@ var calendarView = function() {
     //used in renderWeek for Uptime
     var latestStartDate = currentDate;
 
-    var todayStartHour = journal.dayStartHour(currentDate);
+    var todayStartHour = parsley.startHour(currentDate);
     var hoursInPomDay = 15;
     var hoursInPeriod = hoursInPomDay/3;
 
     $("#calendar").append(div("cal-heading",true));
     var labels = "weeklies monthlies timebar treemap".split(' ');
 
-    console.error('# MODIFYING THE FUCKING CALENDAR HEADER MOTHERFUCKER #######')
     $("#cal-heading").append(div(labels,false,"label"));
     $("#cal-heading").append(div("task-details",true));
     $("#calendar").append(div("cal-nav",true))
@@ -1199,7 +1198,7 @@ var calendarView = function() {
         dosageItems.forEach(function(item) { 
           dosageBox.append(item + '<br>');
         });
-        var dayStart = journal.dayStartHour(currentDay);
+        var dayStart = parsley.startHour(currentDay);
         if (typeof dayStart == 'number') { 
           //TODO: this only really needs to be called once! 
           if (isCurrentWeek) {

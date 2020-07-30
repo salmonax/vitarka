@@ -7,6 +7,7 @@
 
 const PARSLEY_DEFAULTS = {
   dayTarget: 16,
+  dayStartHour: 9,
 };
 
 function buildParsleyData(linesOrFile) {
@@ -19,16 +20,26 @@ function buildParsleyData(linesOrFile) {
     stats: {},
     targets: {},
     media: {},
-    startHours: { default: 10 },
+    startHours: { },
+    DEFAULTS: PARSLEY_DEFAULTS,
 
     dayTarget: function(dateWithOffset) {
       var index = monthName(dateWithOffset.getMonth());
       return parsley.targets[index] || PARSLEY_DEFAULTS.dayTarget;
     },
+    getNearestDayWithStartHour: function(adjustedUTC) {
+      // Not super efficient, but should be fine for the purpose.
+      var comps = Object.keys(parsley.startHours).map(n => Date.parse(n)).sort();
+      var nearestSmallerIndex = comps.findIndex(compUTC => compUTC > adjustedUTC) - 1;
+      // If no index is ofund, will return false
+      return !!comps[nearestSmallerIndex] && (new Date(comps[nearestSmallerIndex]).toLocaleDateString());
+    },
     startHour: function(adjustedUTC) {
-      console.warn(new Date(adjustedUTC).toLocaleDateString());
       return parsley.startHours[(new Date(adjustedUTC).toLocaleDateString())] ||
-        parsley.startHours.default;
+        // Vitarka: this needs to be clamped to not be buggy, but uncomment to 
+        // always get the startHour from the previous date
+        // parsley.startHours[parsley.getNearestDayWithStartHour(adjustedUTC)] ||
+        parsley.DEFAULTS.dayStartHour;
     },
     dayTotal: function(dateWithOffset,separateOffset) {
       var startDate;
@@ -96,7 +107,16 @@ function buildParsleyData(linesOrFile) {
   for (var i = 0; i < eof; i++) {
     // Added trim much later, be wary of any weirdness
     var line = lines[i].replace(/\r?\n|\r/g,'').trim();
+  
+    if (isCommentStartHour(line)) {
+      var startHour = +line.substr(1).trim().split(':')[0];
+      if (currentDate && !isNaN(startHour)) {
+        parsley.startHours[currentDate] = startHour;
+      }
+      continue;
+    }
     if (isComment(line)) { continue; }
+  
     if (isStartHour(line)) {
       var startHour = +line.split(':')[1];
       if (currentDate && !isNaN(startHour)) {
@@ -290,6 +310,14 @@ function buildParsleyData(linesOrFile) {
   }
   function isTagDefinition(line) {
     return /^[^\d]{1}\s.*/.test(line);
+  }
+  
+  // Vitarka: reading a comment line annoys me a bit, but in 2020 I've
+  // adopted a style across many days that involves a comment
+  // of the format "# <startHour>: <Block 1 end> <Block 2 end> <Block 3 end>"
+  // for my own visual reference. This will detect and use it.
+  function isCommentStartHour(line) {
+    return /^#\s?[0-9][0-9]?:\s*[0-9][0-9]?\s+[0-9][0-9]?\s+[0-9][0-9]?\s*$/.test(line);
   }
   function isComment(line) {
     return /^#.*/.test(line);
