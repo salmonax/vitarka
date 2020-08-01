@@ -1,3 +1,21 @@
+// Vitarka: Found some quicky query string thing that isn't great
+// Doing this quickly and plan on rewriting, so don't
+// want to have to pass this down the terrible render chain
+window.qp = {
+  set: (opt) => {
+    window.history.replaceState({}, '',
+      window.location.href.split('?')[0]
+      + '?'
+      + window.Qs.stringify(opt),
+    );
+  },
+  get: () => window.Qs.parse(window.location.href.split('?')[1]),
+  isEmpty() {
+    return !Object.keys(this.get()).length
+  },
+};
+
+
 // Vitarka: wrapped this to make clearer that it inits everything
 // (was originally top-level)
 // Note: this will get called by the component when the pomsheet is loaded
@@ -18,7 +36,7 @@ function startBindu(parsleyData) {
   // $.when(lastYear,thisYear,journalRaw).done(function (lastYear, thisYear,journalRaw, parsleyData) {
   var model = initModel(lastYear,thisYear,journalRaw, parsleyData),
       view = calendarView.init(model);
-  calendarController.init("#calendar",view);
+  calendarController.init("#calendar", view);
   window.$view = view
     // }
   // ); 

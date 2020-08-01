@@ -134,7 +134,9 @@ var calendarView = function() {
     $("#calendar").append(div("cal-nav",true))
     $("#calendar").append(div("cal-body",true));
 
-    var hoursOffset = 6;
+    // It's a bit weird that this is being set here, just rolling with it for now 
+    var hoursOffset = +qp.get().hoursOffset || 6;
+
     offsetCurrentDate = new Date(currentDate.getTime());
     offsetCurrentDate.setHours(offsetCurrentDate.getHours()-hoursOffset);
 
@@ -163,12 +165,11 @@ var calendarView = function() {
      
     /// DRY this up to renderByRoute or something
     var actionMap = {
-      weeklies: renderWeek.bind(null, startDate, hoursOffset, mode),
-      monthlies: renderMonth.bind(null, startDate, hoursOffset),
-      timebar: renderTimebar.bind(null, arcOf(startDate))
+      weeklies: renderWeek.bind(null, startDate, hoursOffset, mode, null, true),
+      monthlies: renderMonth.bind(null, startDate, hoursOffset, true),
+      timebar: renderTimebar.bind(null, arcOf(startDate), null, null, true),
     };
-    console.log(actionMap[window.location.hash.substr(1)]);
-    (actionMap[window.location.hash.substr(1)] || actionMap['weeklies'])()  
+    (actionMap[window.location.hash.substr(1).split('?')[0]] || actionMap['weeklies'])()  
 
 
     // renderMonth(startDate,hoursOffset);
@@ -192,9 +193,13 @@ var calendarView = function() {
         // r("OFF!");
       },
       setMonth: function(index) {
-        // var newDate = new Date(startDate.getTime()); 
+        var place = window.location.hash.substr(1).split('?')[0];
         startDate.setMonth(index);
-        renderWeek(startDate,hoursOffset,mode);
+        if (place === 'monthlies') {
+          renderMonth(startDate, hoursOffset);
+        } else {
+          renderWeek(startDate,hoursOffset,mode);
+        }
       },
       setWeek: function(index) {
         var newWeekStart = (index)*7+1;
@@ -231,7 +236,7 @@ var calendarView = function() {
             renderTreemap();
           },
           next: function() {
-            var page = window.location.hash.substr(1)
+            var page = window.location.hash.substr(1).split('?')[0];
             var currentMonth = startDate.getMonth();
             if (page === 'monthlies') {
               startDate.setMonth(startDate.getMonth()+1)
@@ -248,7 +253,7 @@ var calendarView = function() {
             (actionMap[page] || actionMap['weeklies'])()
           },
           previous: function() {
-            var page = window.location.hash.substr(1)
+            var page = window.location.hash.substr(1).split('?')[0];
             var currentMonth = startDate.getMonth();
             if (page === 'monthlies') {
               startDate.setMonth(startDate.getMonth()-1)
@@ -283,6 +288,8 @@ var calendarView = function() {
             (actionMap[window.location.hash.substr(1)] || actionMap['weeklies'])()
           },
           '+': function() {
+            let foo = qp.get().hoursOffset;
+            console.log("!!!", hoursOffset, foo);
             hoursOffset += 1;
             //TODO: please fix +24 and -0 offsets. DONE?
             hoursOffset = Math.min(hoursOffset,23);
@@ -290,6 +297,8 @@ var calendarView = function() {
             // r(hoursOffset);
           },
           '-': function() {
+            let foo = qp.get().hoursOffset;
+            console.log('!!!', hoursOffset, foo);
             hoursOffset -= 1;
             hoursOffset = Math.max(hoursOffset,0);
             renderWeek(startDate,hoursOffset,mode);
@@ -340,7 +349,19 @@ var calendarView = function() {
       return html;
     }
 
-    function renderTimebar(startDate,fullYear,propToShow) {
+    function renderTimebar(startDate,fullYear,propToShow, initialRender) {
+      var lastQuery = qp.get();
+      if (initialRender && !qp.isEmpty()) {
+        // Only on browser-initiated render, override defaults with query params, if they exist
+        startDate = new Date(lastQuery.startDate) || startDate; 
+        fullYear = !!(lastQuery.fullYear || fullYear);
+        propToShow = lastQuery.propToShow || propToShow; 
+      }
+      qp.set({ 
+        startDate,
+        fullYear,
+        propToShow,
+      });
       fullYear = fullYear || false;
       propToShow = propToShow || "category";
       // p(startDate);
@@ -534,8 +555,16 @@ var calendarView = function() {
       }
     }
 
-    function renderMonth(startDate) {
-      console.log('tried it!')
+    function renderMonth(startDate, hoursOffset, initialRender) {
+      var lastQuery = qp.get();
+      if (initialRender && !qp.isEmpty()) {
+        // Only on browser-initiated render, override defaults with query params, if they exist
+        startDate = new Date(lastQuery.startDate) || startDate; 
+      }
+      qp.set({
+        ...lastQuery,
+        startDate,
+      });
       var i,
         $body = $("#cal-body"),
         $epicNav = $("#mini-epic-nav"),
@@ -734,9 +763,23 @@ var calendarView = function() {
       // p("OH BOY!");
     }
 
-    function renderWeek(startDate,hoursOffset,mode,autoAdjustOffset) {
-      // p(getMinOffset());
-      // p(hoursOffset);
+    function renderWeek(startDate,hoursOffset,mode, autoAdjustOffset, initialRender) {
+      var lastQuery = qp.get();
+      if (initialRender && !qp.isEmpty()) {
+        // Only on browser-initiated render, override defaults with query params, if they exist
+        startDate = new Date(lastQuery.startDate) || startDate; 
+        hoursOffset = +lastQuery.hoursOffset || hoursOffset;
+        mode = lastQuery.mode || mode;
+        autoAdjustOffset = !!(lastQuery.autoAdjustOffset || autoAdjustOffset);
+        console.log('???', autoAdjustOffset);
+      }
+      qp.set({
+        ...lastQuery,
+        startDate,
+        hoursOffset,
+        mode,
+        autoAdjustOffset,
+      });
       mode = mode || "Box";
       //TODO: stop this from changing renderCalendar's startDate!
       // Date behavior has gotten really convoluted since the refactor
