@@ -1,0 +1,12 @@
+{
+  "name": "tray-demo",
+  "version": "1.1.0",
+  "main": "main.js",
+  "dependencies": {
+    "datauri": "^3.0.0",
+    "electron-watch": "^1.0.9"
+  },
+  "scripts": {
+    "dev": "NODE_ENV='development' electron . --inspect"
+  }
+}
