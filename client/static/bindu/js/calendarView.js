@@ -142,9 +142,23 @@ var calendarView = function() {
 
     var today = {}
     today.getTotal = function() {
-      return parsley.dayTotal(currentDate,hoursOffset);
+      // Vitarka: gross and kludgy, but if the current time is 
+      // earlier than the "start" hour for the current date, we're
+      // we're actually logging the previous day. To compensate,
+      // also forgo sending hoursOffset into parsley.dayTotal.
+      let lastDate = null;
+      if (parsley.startHour(currentDate) > currentDate.getHours()) {
+        lastDate = new Date(currentDate.getTime() - 8.64e+7);
+      }
+      return parsley.dayTotal(lastDate || currentDate, lastDate ? 0 : hoursOffset);
     };
-    today.getTarget = function() { return parsley.dayTarget(currentDate); };
+    today.getTarget = function() {
+      let lastDate = null; 
+      if (parsley.startHour(currentDate) > currentDate.getHours()) {
+        lastDate = new Date(currentDate.getTime() - 8.64e+7);
+      }
+      return parsley.dayTarget(currentDate); 
+    };
     today.getLeft = function() {
       return Math.max(today.getTarget()-today.getTotal(),0);
     };
@@ -566,7 +580,7 @@ var calendarView = function() {
         ...lastQuery,
         startDate,
       });
-      
+
       _renderNav(); // Vitarka: basically, calling this renders the weeklies nav first, then refashions it
       var i,
         $body = $("#cal-body"),
@@ -1161,7 +1175,10 @@ var calendarView = function() {
           // var hoursSinceStart = Math.floor((time.getTime()-latestStartDate.getTime())/(1000*60*60));
 
           var hoursSinceStart = time.getHours() - todayStart;
-          // var hoursSinceStart = time.getHours()-todayStartHour;
+          // Adds 24 if the startHour is bigger than the current hour; non-failsafe way to account to
+          // keep it accurate when the day changes. 
+          var hoursSinceStart = time.getHours()-todayStartHour + ((time.getHours() < todayStartHour) ? 24 : 0);
+          
           var currentPeriod = Math.floor(hoursSinceStart/hoursInPeriod)+1;
           var pomsLeft = today.getLeft();
           var pomsDone = today.getTotal();
