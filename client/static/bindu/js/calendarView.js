@@ -369,6 +369,7 @@ var calendarView = function() {
       $("#cal-body").empty();
       // $("#cal-nav").empty();
       $("#cal-nav *").unbind();
+      _renderNav();
       var epicNav = $("#mini-epic-nav"),
           yearNav = $("#mini-year-nav"),
           monthNav = $("#mini-month-nav");
@@ -574,6 +575,8 @@ var calendarView = function() {
 
       $body.empty();
       $("#cal-nav *").unbind();
+      _renderNav(); // Vitarka: basically, calling this renders the weeklies nav first, then refashions it
+
       $yearNav.empty();
 
       for (i = 0; i < 12; i++) {
@@ -763,6 +766,55 @@ var calendarView = function() {
       // p("OH BOY!");
     }
 
+    function _renderNav() {
+      nav = $("#cal-nav");
+      nav.empty();
+      //TODO: ugh, please refactor all rendering!
+      var navLabels = "- + R previous next today".split(' ');
+      nav.append(div("nav-title",true));
+      // nav.append('<div id="week-title">'+startDate.toLocaleDateString()+"</div>");
+      nav.append(div("mini-epic-nav",true));
+      nav.append(div("mini-year-nav",true));
+      nav.append(div("mini-month-nav",true));
+      nav.append(div("mini-option-nav",true));
+      
+      var epicNav = $("#mini-epic-nav"),
+          yearNav = $("#mini-year-nav"),
+          monthNav = $("#mini-month-nav");
+          optionNav = $("#mini-option-nav");
+      
+      parsley.getUnique("year").sort().forEach(function(year) { 
+        epicNav.append('<div class="mini-year">'+year+'</div>')
+      });
+      
+      for (var i = 0; i < 12; i++) {
+        yearNav.append('<div class="mini-month">'+monthNameShort(i)+'</div>');
+      }
+      for (var i = 0; i < 5; i++) {
+        monthNav.append('<div class="mini-week">'+(i+1)+'</div>');
+      }
+      var navOptions = "Box Report".split(' ');
+      for (var i in navOptions) { 
+        optionNav.append('<div class="mini-option">'+navOptions[i]+'</div>');
+      }
+      
+      
+      var weekIndex = Math.floor((startDate.getDate()-1)/7)+1;
+      // p(weekIndex);
+      var monthIndex = startDate.getMonth()+1;
+      
+      //Please stop calling parsley.getUnique().sort() for this crap.
+      var yearIndex = parsley.getUnique("year").sort().indexOf(startDate.getFullYear().toString())+1;
+      
+      $("#mini-year-nav .mini-month:nth-child("+monthIndex+")").addClass("current");
+      $("#mini-month-nav .mini-week:nth-child("+weekIndex+")").addClass("current");
+      $("#mini-epic-nav .mini-year:nth-child("+yearIndex+")").addClass("current");
+      $("#mini-option-nav .mini-option:nth-child("+(navOptions.indexOf(mode)+1)+")").addClass("current");
+      
+      nav.append(div(navLabels,false,"nav-button"));
+    }
+
+
     function renderWeek(startDate,hoursOffset,mode, autoAdjustOffset, initialRender) {
       var lastQuery = qp.get();
       if (initialRender && !qp.isEmpty()) {
@@ -804,51 +856,7 @@ var calendarView = function() {
 
 
       body.empty();
-      nav.empty();
-      //TODO: ugh, please refactor all rendering!
-      var navLabels = "- + R previous next today".split(' ');
-      nav.append(div("nav-title",true));
-      // nav.append('<div id="week-title">'+startDate.toLocaleDateString()+"</div>");
-      nav.append(div("mini-epic-nav",true));
-      nav.append(div("mini-year-nav",true));
-      nav.append(div("mini-month-nav",true));
-      nav.append(div("mini-option-nav",true));
-
-      var epicNav = $("#mini-epic-nav"),
-          yearNav = $("#mini-year-nav"),
-          monthNav = $("#mini-month-nav");
-          optionNav = $("#mini-option-nav");
-
-      parsley.getUnique("year").sort().forEach(function(year) { 
-        epicNav.append('<div class="mini-year">'+year+'</div>')
-      });
-
-      for (var i = 0; i < 12; i++) {
-        yearNav.append('<div class="mini-month">'+monthNameShort(i)+'</div>');
-      }
-      for (var i = 0; i < 5; i++) {
-        monthNav.append('<div class="mini-week">'+(i+1)+'</div>');
-      }
-      var navOptions = "Box Report".split(' ');
-      for (var i in navOptions) { 
-        optionNav.append('<div class="mini-option">'+navOptions[i]+'</div>');
-      }
-
-
-      var weekIndex = Math.floor((startDate.getDate()-1)/7)+1;
-      // p(weekIndex);
-      var monthIndex = startDate.getMonth()+1;
-
-      //Please stop calling parsley.getUnique().sort() for this crap.
-      var yearIndex = parsley.getUnique("year").sort().indexOf(startDate.getFullYear().toString())+1;
-
-      $("#mini-year-nav .mini-month:nth-child("+monthIndex+")").addClass("current");
-      $("#mini-month-nav .mini-week:nth-child("+weekIndex+")").addClass("current");
-      $("#mini-epic-nav .mini-year:nth-child("+yearIndex+")").addClass("current");
-      $("#mini-option-nav .mini-option:nth-child("+(navOptions.indexOf(mode)+1)+")").addClass("current");
-
-      nav.append(div(navLabels,false,"nav-button"));
-
+      _renderNav();
 
       var columnLabel, dayPos;
       if (mode == "Box") {
