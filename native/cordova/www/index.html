@@ -140,7 +140,7 @@
             // Bypass permission-request, currently only for responsiveVoice,
             // but could be an issue for other W3C specs
             cordova.plugins.Focus.focus($('#focus'));
-            enovation.play();
+            // enovation.play();
 
             // TODO: definitely wrap responsiveVoice in promise-related stuff that isn't terrible
             setTimeout(() => {
@@ -203,6 +203,7 @@
             let timer;
             timer = later.setTimeout(
                 () => {
+                    console.log('Set the timeout')
                     cb();
                     timer = later.setInterval(
                         cb,
@@ -262,6 +263,7 @@
         }
 
         function playCountdownBeep(_beeps = beeps) {
+            console.log('Tried to play beep at', (new Date()).toLocaleTimeString([], { timeStyle: 'short'}) );
             const beepCount = getBeepCountFromHour();
             // Randomly play the maru or batsu beep
             // Make this depend on number of poms done, or something
