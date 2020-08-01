@@ -566,6 +566,8 @@ var calendarView = function() {
         ...lastQuery,
         startDate,
       });
+      
+      _renderNav(); // Vitarka: basically, calling this renders the weeklies nav first, then refashions it
       var i,
         $body = $("#cal-body"),
         $epicNav = $("#mini-epic-nav"),
@@ -575,7 +577,6 @@ var calendarView = function() {
 
       $body.empty();
       $("#cal-nav *").unbind();
-      _renderNav(); // Vitarka: basically, calling this renders the weeklies nav first, then refashions it
 
       $yearNav.empty();
 
@@ -1151,7 +1152,15 @@ var calendarView = function() {
           //WARNING: latestStartDate is closured and depends on being called after the calendar has been drawn!!
           // console.log(time.toLocaleString())
           // console.log(latestStartDate.toLocaleString())
-          var hoursSinceStart = Math.floor((time.getTime()-latestStartDate.getTime())/(1000*60*60));
+
+
+          var todayStart = 
+            parsley.startHours[latestStartDate.toLocaleTimeString([], { timeStyle: 'short' })] ||
+            parsley.DEFAULTS.dayStartHour;
+
+          // var hoursSinceStart = Math.floor((time.getTime()-latestStartDate.getTime())/(1000*60*60));
+
+          var hoursSinceStart = time.getHours() - todayStart;
           // var hoursSinceStart = time.getHours()-todayStartHour;
           var currentPeriod = Math.floor(hoursSinceStart/hoursInPeriod)+1;
           var pomsLeft = today.getLeft();
@@ -1167,11 +1176,15 @@ var calendarView = function() {
           // var crunchStatus = (crunchBeginsHour-time.getHours() <= 0) ? "NOW" : formatHour(crunchBeginsHour);
 
           //time.toLocaleTimeString() 
-          var displayString = "Uptime: " + hoursSinceStart + ":" + time.getMinutes() + ":" + time.getSeconds() + "   Period: " + currentPeriod + "   " + 
-            "Poms Left: " + pomsLeft + "   ";
-            // "Periods: 0 / 0 / 0" + "   " + 
-            
-             // + "   " +
+          var displayString = "Uptime: " 
+            + hoursSinceStart.toString().padLeft(2, '0') + ":" 
+            + time.getMinutes().toString().padLeft(2,'0') 
+            + ":" + time.getSeconds().toString().padLeft(2, '0') 
+            + "   Period: " + currentPeriod + "   " 
+            + "Poms Left: " + pomsLeft + "   ";
+            // Vitarka: interesting... I didn't know I'd had a "saturation" concept already
+            //  Doubt I'll implement it here, but who knows
+            //
             // "Crunch: " + crunchStatus;
           $("#task-details").text(displayString);
 
