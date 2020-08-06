@@ -16,9 +16,12 @@
   "license": "Apache-2.0",
   "dependencies": {
     "cordova-android": "^8.1.0",
+    "cordova-httpd": "git+https://github.com/floatinghotpot/cordova-httpd.git",
     "cordova-plugin-background-mode": "^0.7.3",
     "cordova-plugin-device": "^2.0.3",
+    "cordova-plugin-enable-cleartext-traffic": "^2.1.0",
     "cordova-plugin-powermanagement-orig": "git+https://github.com/boltex/cordova-plugin-powermanagement.git",
+    "cordova-plugin-remote-injection": "^0.5.2",
     "fr._46cl.focus": "git+https://github.com/46cl/cordova-android-focus-plugin.git"
   },
   "cordova": {
@@ -26,7 +29,10 @@
       "at.gofg.sportscomputer.powermanagement": {},
       "cordova-plugin-background-mode": {},
       "fr._46cl.focus": {},
-      "cordova-plugin-whitelist": {}
+      "cordova-plugin-whitelist": {},
+      "com.rjfun.cordova.httpd": {},
+      "cordova-plugin-enable-cleartext-traffic": {},
+      "cordova-plugin-remote-injection": {}
     },
     "platforms": [
       "android"

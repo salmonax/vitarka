@@ -27,12 +27,18 @@ function buildParsleyData(linesOrFile) {
       var index = monthName(dateWithOffset.getMonth());
       return parsley.targets[index] || PARSLEY_DEFAULTS.dayTarget;
     },
-    getNearestDayWithStartHour: function(adjustedUTC) {
+    getNearestDayWithStartHour: function(adjustedUTC, extendToFuture = false) {
       // Not super efficient, but should be fine for the purpose.
       var comps = Object.keys(parsley.startHours).map(n => Date.parse(n)).sort();
       var nearestSmallerIndex = comps.findIndex(compUTC => compUTC > adjustedUTC) - 1;
+      if (extendToFuture && !comps[nearestSmallerIndex]) {
+        nearestSmallerIndex = comps.length - 1;
+      }
       // If no index is ofund, will return false
       return !!comps[nearestSmallerIndex] && (new Date(comps[nearestSmallerIndex]).toLocaleDateString());
+    },
+    latestStartHour: function() {
+      return this.startHours[this.getNearestDayWithStartHour(Date.now(), true)];
     },
     startHour: function(adjustedUTC) {
       return parsley.startHours[(new Date(adjustedUTC).toLocaleDateString())] ||

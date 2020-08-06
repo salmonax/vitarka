@@ -3,6 +3,8 @@ import { inject, observer } from 'mobx-react';
 import { withRouter } from 'react-router';
 import { observable, action } from 'mobx';
 
+import * as Droid from 'lib/droid';
+
 import '../main.scss';
 
 const TimerProgress = props => pug`
@@ -63,6 +65,10 @@ export default class Main extends Component {
     window.main = this;
     this.loadPath();
     window.addEventListener('popstate', (e) => this.loadPath());
+    Droid.initBackgroundMode();
+    this.props.common.onParsleyData(parsleyData => {
+      Droid.playBlockBeepsMinutely(parsleyData.latestStartHour());
+    });
   }
 
   get main() {

@@ -10,6 +10,7 @@ platforms/ios/cordova/console.log
 # Android Platform
 platforms/android/.gradle
 platforms/android/build
+platforms/android/app/src/www
 platforms/android/assets/www
 platforms/android/local.properties
 platforms/android/CordovaLib/build

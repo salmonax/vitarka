@@ -3,10 +3,7 @@
   be rewritten. Works, though!
 
  */
-
 import { fetch } from 'whatwg-fetch';
-// import http from 'stream-http';
-// window.http = http;
 
 import fetchStream from 'fetch-readablestream';
 import $syncBus from './pubnub';
@@ -203,7 +200,11 @@ function handleLogin(onFirstFunc, onCompleteFunc, waitForOnline) {
   
   // FUCK, I hate when I code like this!
   _s.rawPomsheet = 'In handleLong(); about to check for access token';
-  accessToken = window.accessToken = loadTokenOrLogin(clientId);
+
+  // Gross, but the next function will cause the page to reload
+  // preventing anything that follows from loading
+  accessToken = window.accessToken = loadTokenOrLogin(clientId); 
+  
   dropbox = window.dropbox = new Dropbox.Dropbox({ accessToken, fetch });
 
   loadOrGenerateUserHash(clientId).then(hash => {

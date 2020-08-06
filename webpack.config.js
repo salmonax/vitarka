@@ -8,9 +8,11 @@ const Dotenv = require('dotenv-webpack')
 
 const cssnano = require('cssnano')
 
+const PLATFORM = process.env.PLATFORM ? process.env.PLATFORM.toLowerCase() : 'web';
+
 const config = {
   devtool: 'eval-source-map',
-  mode: process.env.ENV === 'PRODUCTION' ? 'production' : 'development',
+  mode: process.env.ENV ? 'production' : 'development',
   entry: [
     path.join(__dirname, 'client/src/index.js')
   ],
@@ -95,8 +97,9 @@ const config = {
   }
 }
 
-if (config.mode === 'production') {
-  console.log('Doing prod business.')
+if (config.mode === 'production' && PLATFORM === 'web') {
+  console.log('Doing prod business.');
+  // what the hell was *this* for?
   // config.entry.shift();
   config.plugins.push(
     new CopyWebpackPlugin([{
@@ -111,12 +114,13 @@ if (config.mode === 'production') {
       from: path.join(__dirname, 'client/mobile'),
       to: path.join(__dirname, 'client/dist')
     }]),
-
+    // WARNING: deprecated in 4 and should use mini-css-extract-plugin instead
     new ExtractTextPlugin({
       filename: 'styles.css',
       disable: false,
       allChunks: true
     }),
+    // WARNING: might be as deprecated as the above; look into it when refactoring
     new OptimizeCssAssetsPlugin({
       assetNameRegExp: /\.optimize\.css$/g,
       cssProcessor: cssnano,
@@ -143,7 +147,66 @@ if (config.mode === 'production') {
     //   })
     // }
   )
-} else if (config.mode === 'development') {
+} else if (config.mode === 'production' && PLATFORM === 'droid') {
+  console.log('Doing droid business.');
+  // what the hell was *this* for?
+  // config.entry.shift();
+
+  config.output = {
+    path: path.join(__dirname, 'native/cordova/www/webpack'),
+    filename: 'bundle.js'
+  };
+  config.plugins = [
+    new HtmlWebpackPlugin({
+      template: 'client/static/index.html',
+      inject: false
+    }),
+  ];
+  
+  config.plugins.push(
+    new CopyWebpackPlugin([{
+      from: path.join(__dirname, 'client/static'),
+      to: path.join(__dirname, 'native/cordova/www/webpack/static')
+    },
+    {
+      from: path.join(__dirname, 'client/src/service-worker.js'),
+      to: path.join(__dirname, 'native/cordova/www/webpack')      ,
+    }]),
+
+    // The base folder has icon-related files, so this is deprecated; will handle later
+    // new CopyWebpackPlugin([{
+    //   from: path.join(__dirname, 'client/mobile'),
+    //   to: path.join(__dirname, 'native/cordova/www/webpack')
+    // }]),
+    // WARNING: deprecated in 4 and should use mini-css-extract-plugin instead
+
+    new ExtractTextPlugin({
+      filename: 'styles.css',
+      disable: false,
+      allChunks: true
+    }),
+    // WARNING: might be as deprecated as the above; look into it when refactoring
+    new OptimizeCssAssetsPlugin({
+      assetNameRegExp: /\.optimize\.css$/g,
+      cssProcessor: cssnano,
+      cssProcessorOptions: { discardComments: { removeAll: true } },
+      canPrint: true
+    }),
+  );
+  config.module.rules.push(
+    {
+      test: /\.scss$/,
+      loader: ExtractTextPlugin.extract({
+        fallback: 'style-loader',
+        use: ['css-loader', 'sass-loader']
+      })
+    },
+    {
+      test: /\.css$/,
+      loaders: ['style-loader', 'css-loader']
+    },
+  );
+} else {
   // config.devServer.overlay = {
   //   errors: true
   // }

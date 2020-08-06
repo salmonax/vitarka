@@ -1,7 +1,12 @@
 <!doctype html>
 <html>
   <head>
-    <link rel="manifest" href="/manifest.json">
+    <!-- CORDOVA HEADINGS -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: gap: https://ssl.gstatic.com 'unsafe-eval' 'unsafe-inline' *; style-src 'self' 'unsafe-inline'; media-src * file: blob: data:; img-src 'self' file: data: content:;">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    
+    <link rel="manifest" href="manifest.json">
     <link rel="icon" href="/static/favicon.ico?v=2" />
 
     <meta charset="utf-8">
@@ -40,9 +45,6 @@
     <!-- TOUCH EVENT HANDLING -->
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.js"></script>
 
-    <!-- DROPBOX: REPLACE WITH NPM -->
-    <script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
-
     <!-- LEGACY BINDU DEPS: REBUILD AND ELIMINATE ASAP -->
     <script
         src="https://code.jquery.com/jquery-2.1.0.min.js"
@@ -57,6 +59,10 @@
     <script src="/static/bindu/js/calendarView.js" defer></script>
     <script src="/static/bindu/js/calendarController.js" defer></script>
     <script src="/static/bindu/js/lagom.js" defer></script>
+
+    <!-- TODO: Possibly bundle, but might be quicker on CDN -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/later/1.2.0/later.min.js"></script>
+
     <link type="text/css" href="/static/bindu/css/lagom.css" rel="stylesheet"></link>
   </head>
   <style>
@@ -271,7 +277,12 @@
     <!-- FIREBASE END -->
 
 <!--     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.5/lodash.core.js"></script> -->
-    <script defer src="/bundle.js"></script>
+    <script type="text/javascript" src="cordova.js"></script>
+    
+    <!-- DROPBOX: REPLACE WITH NPM -->
+    <script defer src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+
+    <script defer src="bundle.js"></script>
 
     <script src="https://apis.google.com/js/api.js"></script>
 
@@ -293,22 +304,15 @@
         // window.addEventListener('animationend', __startApp)
 
         // Quick dirty hack to get rid of styles.css error in non-prod
-        //
-
-        // document.addEventListener('touchmove', function(event) {
-        //     event.preventDefault();
-        // }, false);
-        // document.getElementById('app').addEventListener('touchmove', function(event) {
-        //     event.stopPropagation();
-        // }, false);
-
-        if (!['127.0.0.1','0.0.0.0', 'localhost'].includes(location.hostname)) {
+        if (!['127.0.0.1','0.0.0.0', 'localhost'].includes(location.hostname) || window._cordovaNative) {
             document.body.appendChild(
                 Object.assign(document.createElement('link'), {
                     rel: 'stylesheet',
-                    href: '/styles.css'
+                    href: 'styles.css'
                 })
             )
+        } else {
+            console.log('um?');
         }
 
         document.addEventListener('DOMContentLoaded', function() {
