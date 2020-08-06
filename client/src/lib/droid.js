@@ -56,7 +56,7 @@ export async function playBlockBeepsMinutely(startingHour) {
   } else {
     console.log('playBlockBeepsMinutely: Starting initial timer with startingHour:', startingHour);
   }
-  _activeTimerClear = runMinutely(() => playCountdownBeep(beeps, startingHour));
+  _activeTimerClear = runHourly(() => playCountdownBeep(beeps, startingHour));
   _activeTimerClear.startingHour = startingHour;
 }
 
@@ -103,32 +103,28 @@ function getBeepCountFromHour(startingHour) {
 // Set a timeout that runs at the start of the next hour
 // Needs to be rewritten to remove later.js
 function runHourly(cb, later = window.later) {
-  if (!later) {
-    console.error('No later.js specified or found. Ignoring runMinutely()');
-    return;
-  }
+  console.log('runHourly called. Waiting', (_timeToNextHour()/1000/60).toFixed(0), 'minutes');
   let timer;
-  timer = later.setTimeout(
-      () => {
-          console.log('Set the timeout')
-          cb();
-          timer = later.setInterval(
-              cb,
-              later.parse.text('every 1 hour'),
-          )
-      },
-      later.parse.text(`at ${_getNextHourString()}`),
+  let count = 1;
+  timer = window.setTimeout(
+    () => {
+      console.log(count++, 'initiating first timeout timer at', (new Date()).toLocaleString())
+      cb();
+      timer = window.setInterval(() => {
+        console.log(count++, 'ran setInterval at', (new Date()).toLocaleString());
+        cb();
+      }, 3.6e+6);
+    },
+    _timeToNextHour(),
   );
   // Closure the timer variable and return a function.
   // This way, the caller won't need to care. 
-  return () => timer.clear();
-  
-  function _getNextHourString() {
-      const now = new Date();
-      now.setHours(now.getHours() + 1);
-      now.setMinutes(0);
-      now.setSeconds(0);
-      return now.toLocaleTimeString([], { timeStyle: 'short'});
+  return () => clearInterval(timer);
+
+  function _timeToNextHour() {
+    const now = new Date(Date.now() + 3.6e+6);
+    now.setMinutes(0); 
+    return now.setSeconds(0)-Date.now();
   }
 }
 
