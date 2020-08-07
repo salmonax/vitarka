@@ -88,6 +88,10 @@ export function getDiegesis($startHour = 9, $endHour, $adjustedUTC, $odysseyOffs
   // const $odysseyOffset = 7;
   const curOdyssey = Math.ceil((curYear-7)/7);
 
+  // 2020: Really have no idea why this wasn't in there before,
+  // but finally adding it
+  const curDayInSprint = (((dayDate-1)%7+1)-1)%2+1;
+
   const counts = {
     pom: 5, // in block
     block: 3,
@@ -108,7 +112,7 @@ export function getDiegesis($startHour = 9, $endHour, $adjustedUTC, $odysseyOffs
     pom: curPom, // ordinal pom from start of block, starting at 1
     interval: curInterval, // placeholder for the current position within a 5 hour block
     block: curBlock, // 5 hours, 3 measured per day
-    // day: 0, // day in sprint
+    day: curDayInSprint, // day in sprint
     stanza: curStanza, // 2 blocks or 10 hours -- FUCK, I hate these
     sprint: curSprint, // 3 stanzas, 2 days
     week: curMonthweek,

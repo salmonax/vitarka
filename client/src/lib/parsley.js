@@ -34,11 +34,12 @@ function buildParsleyData(linesOrFile) {
       if (extendToFuture && !comps[nearestSmallerIndex]) {
         nearestSmallerIndex = comps.length - 1;
       }
-      // If no index is ofund, will return false
+      // If no index is found, will return false
       return !!comps[nearestSmallerIndex] && (new Date(comps[nearestSmallerIndex]).toLocaleDateString());
     },
     latestStartHour: function() {
-      return this.startHours[this.getNearestDayWithStartHour(Date.now(), true)];
+      return this.startHours[this.getNearestDayWithStartHour(Date.now(), true)] ||
+        parsley.DEFAULTS.dayStartHour;
     },
     startHour: function(adjustedUTC) {
       return parsley.startHours[(new Date(adjustedUTC).toLocaleDateString())] ||
@@ -176,9 +177,10 @@ function buildParsleyData(linesOrFile) {
     parsley.media[task.media].tasks.push(task);
   });
   for (let title in parsley.media) {
+    // TODO: make this properly handle media re-starts
+    // This sort will make dates be out of order on such items
     parsley.media[title].tasks.sort((a, b) => a.progress - b.progress);
   }
-
 
   return parsley;
 

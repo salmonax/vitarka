@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { inject, observer } from 'mobx-react';
 import { withRouter } from 'react-router';
-import { observable, action } from 'mobx';
+import { observable, action, computed } from 'mobx';
 
 import * as Droid from 'lib/droid';
 
@@ -71,15 +71,34 @@ export default class Main extends Component {
     });
   }
 
+  @computed get diegesisTitle() {
+    const { diegesis } = this.props.common;
+    if (!diegesis) return '';
+    const { arc, month, week, sprint, day } = this.props.common.diegesis;
+    return `A${arc}.M${month}.W${week} : S${sprint}.${day}`;
+  }
+
+  @computed get blocksInScratchNotation() {
+    const { parsleyData } = this.props.common;
+    if (!parsleyData) return '';
+    const startHour = parsleyData.latestStartHour();
+    return `${startHour}: ${startHour + 5} ${startHour + 10} ${startHour + 15}`;
+  }
+
+  @computed get activeBooks() {
+    return this.props.common.booksByLastRead.slice(0, 10).map(n => n.title);
+  }
+
   get main() {
+    const { common } = this.props;
     return pug`
       .screen
         h1.center Main
-        p.center A2.M3.W3 : S2.1.B2
+        p.center ${this.diegesisTitle} 
         br
-        p Poms Done Today: 8
-        p Saturation: 10:00 
-        p Blocks: 20: 25 30 35
+        p Poms Done Today: ${common.pomsToday}
+        p Saturation: (Not Implemented)
+        p Blocks: ${this.blocksInScratchNotation}
         br
         h3 Active Topics
         each topic in this.topics.toJS()
@@ -89,7 +108,7 @@ export default class Main extends Component {
           )= topic
         br
         h3 Active Books
-        each book in this.books.toJS()
+        each book in this.activeBooks
           h4(
             key=book
             onClick=${e => this.navTo('/book_start', { book })}

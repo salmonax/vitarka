@@ -541,4 +541,18 @@ export default class Common {
   @action.bound resumeSyncBus() {
     DropboxService.$syncBus.resume();
   }
+
+  @computed get booksByLastRead() {
+    // TODO: consider changing the media object to include the lastRead property!   
+    if (!this.parsleyData) return [];
+    const { media } = this.parsleyData;
+    return Object.keys(media)
+      .reduce((acc, title) => {
+          const item = media[title];
+          const { tasks, category } = item;
+          const lastRead = Math.max.apply(null, tasks.map(n => Date.parse(n.date)));
+          return acc.concat({ title, lastRead, tasks });
+      }, [])
+      .sort((a, b) => b.lastRead - a.lastRead);
+  }  
 }
