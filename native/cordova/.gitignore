@@ -1,3 +1,6 @@
+# Ignore kludge for live Cordova dev
+www/_debug.js
+
 # Cordova Global
 plugins/
 

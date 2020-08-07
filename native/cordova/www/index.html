@@ -42,9 +42,15 @@
     </head>
     <body>
         <script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" src="_debug.js"></script>
     </body>
     <script>
         document.addEventListener('deviceready', function () {
+            // Allow debugging from local machine by specifying an IP in _debug.js 
+            if (window.DEBUG && window.DEBUG.devServerURL) {
+                window.open(window.DEBUG.devServerURL);
+                return;
+            }
             cordova.plugins.CorHttpd.startServer(
               {
                 www_root: 'webpack',
