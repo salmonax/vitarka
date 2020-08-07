@@ -8,6 +8,7 @@ platforms/ios/cordova/console.log
 *.xcuserdatad
 
 # Android Platform
+platforms/android/*
 platforms/android/.gradle
 platforms/android/build
 platforms/android/app/src/www
