@@ -6,8 +6,14 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "push": "cordova build android && adb -s 192.168.0.100:5555 shell am force-stop com.example.hello && adb -s 192.168.0.100:5555 shell input keyevent KEYCODE_WAKEUP && adb -s 192.168.0.100:5555 install -r $PWD/platforms/android/app/build/outputs/apk/debug/app-debug.apk && osascript -e 'display notification \"App Reinstalled\" with title \"Cordova\" sound name \"Submarine\"' && adb -s 192.168.0.100:5555 shell monkey -p com.mobile.vitarka -c android.intent.category.LAUNCHER 1",
-    "connect": "adb connect 192.168.0.100:5555"
+    "push": "npm run build && npm run adb-connect && npm run adb-wakeup && npm run adb-install && npm run osa-notify && npm run adb-launch",
+    "build": "cordova build android",
+    "adb-stop": "adb -s 192.168.0.100:5555 shell am force-stop com.mobile.vitarka",
+    "adb-wakeup": "adb -s 192.168.0.100:5555 shell input keyevent KEYCODE_WAKEUP",
+    "adb-install": "adb -s 192.168.0.100:5555 install -r $PWD/platforms/android/app/build/outputs/apk/debug/app-debug.apk",
+    "adb-launch": "adb -s 192.168.0.100:5555 shell monkey -p com.mobile.vitarka -c android.intent.category.LAUNCHER 1",
+    "osa-notify": "osascript -e 'display notification \"App Reinstalled\" with title \"Cordova\" sound name \"Submarine\"'",
+    "adb-connect": "adb connect 192.168.0.100:5555"
   },
   "keywords": [
     "ecosystem:cordova"

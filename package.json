@@ -9,7 +9,7 @@
     "deploy": "npm run build && npm run move202 && surge client/dist https://vitarka.surge.sh",
     "build": "rm -rf client/dist && cross-env ENV=PRODUCTION webpack-cli",
     "build:droid": "rm -rf native/cordova/www/webpack && cross-env ENV=PRODUCTION PLATFORM=DROID webpack-cli && npm run push:droid",
-    "build:electron": "echo build:electon exists",
+    "build:electron": "echo build:electron exists",
     "analyze": "webpack --env.analyze",
     "analyze:prod": "ENV=PRODUCTION webpack --env.analyze",
     "dev": "webpack-dev-server --colors --watch --host 0.0.0.0",
@@ -19,7 +19,7 @@
     "start": "concurrently \"npm run dev\" \"npm run fileserver\"",
     "start-ssl": "concurrently \"npm run dev-ssl\" \"npm run fileserver-ssl\"",
     "server": "ENV=PRODUCTION PORT=3000 pm2 start ./server/bin/www",
-    "push:droid": "cd native/cordova && npm run connect && npm run push && cd -"
+    "push:droid": "cd native/cordova && npm run push && cd -"
   },
   "keywords": [],
   "author": "George A. Michel",
