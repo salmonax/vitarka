@@ -47,8 +47,9 @@ var calendarView = function() {
     //TODO: make sure renderWeek uses hoursOffset to determine what "today" is!!
     //TODO: generateParlsyeColors is STILL iffy... figure out where to put it
     var mode = "Box";
-    var calendar = {};
-    calendar.nowLineInterval;
+    var calendar = {
+      nowLineInterval: null,
+    };
 
     var dayName = utils.dayName
         dayNameShort = utils.dayNameShort,
@@ -200,6 +201,9 @@ var calendarView = function() {
     //NOTE: mode is also from renderCalendar!
     //TODO: maybe make these not depend on *setting* startDate?
     return {
+      clearIntervals: function() {
+        window.clearInterval(calendar.nowLineInterval);
+      },
       showTaskStatus: function() {
         // r("ON!");
       },
@@ -849,6 +853,7 @@ var calendarView = function() {
       // Date behavior has gotten really convoluted since the refactor
       if (calendar.nowLineInterval) {
         clearInterval(calendar.nowLineInterval);
+        calendar.nowLineInterval = null;
       }
       startDate.setHours(hoursOffset);
 

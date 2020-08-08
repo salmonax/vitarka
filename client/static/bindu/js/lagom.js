@@ -21,6 +21,9 @@ window.qp = {
 // Note: this will get called by the component when the pomsheet is loaded
 //  so no need to invoke it here.
 function startBindu(parsleyData) {
+  if (window.$view) {
+    window.$view.clearIntervals();
+  }
   // Vitarka: Using on re-renders as well, so always clear
   // the element. Kind of a kludge, but better
   // than leaving in the component
