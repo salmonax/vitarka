@@ -1,15 +1,12 @@
 var calendarController = function() {
   var $calendar,
-      view,
-      initialized = false;
+      view;
   return {
     init: function(page,view) {
-      if (!initialized) { 
         $calendar = $(page);
         view = view;
+        $calendar.off();
         bindEvents(view);
-        initialized = true;
-      }
     }
   }
   function bindEvents(view) {

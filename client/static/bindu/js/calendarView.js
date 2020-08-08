@@ -381,8 +381,7 @@ var calendarView = function() {
       // p(startDate);
       benchStart = new Date().getTime();
       $("#cal-body").empty();
-      // $("#cal-nav").empty();
-      $("#cal-nav *").unbind();
+
       _renderNav();
       var epicNav = $("#mini-epic-nav"),
           yearNav = $("#mini-year-nav"),
@@ -590,8 +589,6 @@ var calendarView = function() {
         $row;
 
       $body.empty();
-      $("#cal-nav *").unbind();
-
       $yearNav.empty();
 
       for (i = 0; i < 12; i++) {
