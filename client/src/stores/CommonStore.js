@@ -550,7 +550,7 @@ export default class Common {
       .reduce((acc, title) => {
           const item = media[title];
           const { tasks, category } = item;
-          const lastRead = Math.max.apply(null, tasks.map(n => Date.parse(n.date)));
+          const lastRead = Math.max.apply(null, tasks.map(n => n.endDate.getTime()));
           return acc.concat({ title, lastRead, tasks });
       }, [])
       .sort((a, b) => b.lastRead - a.lastRead);
