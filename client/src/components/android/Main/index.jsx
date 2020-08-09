@@ -97,15 +97,16 @@ export default class Main extends Component {
         p.center ${this.diegesisTitle} 
         br
         p Poms Done Today: ${common.pomsToday}
-        p Saturation: (Not Implemented)
+        p Saturation: <WIP>
         p Blocks: ${this.blocksInScratchNotation}
         br
         h3 Active Topics
-        each topic in this.topics.toJS()
-          h4(
-            key=topic
-            onClick=${e => this.navTo('/topic_start', { topic })}
-          )= topic
+        h4 <WIP>
+        // each topic in this.topics.toJS()
+        //   h4(
+        //     key=topic
+        //     onClick=${e => this.navTo('/topic_start', { topic })}
+        //   )= topic
         br
         h3 Active Books
         each book in this.activeBooks
