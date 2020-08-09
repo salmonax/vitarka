@@ -13,6 +13,7 @@ const PARSLEY_DEFAULTS = {
 function buildParsleyData(linesOrFile) {
   var lines = Array.isArray(linesOrFile) ? linesOrFile : linesOrFile.split(/\n/);
   var currentDate;
+  var mediaAliases = {};
   var parsley = {
     lines: lines,
     tasks: [],
@@ -20,6 +21,7 @@ function buildParsleyData(linesOrFile) {
     stats: {},
     targets: {},
     media: {},
+    aliasMap: {},
     startHours: { },
     DEFAULTS: PARSLEY_DEFAULTS,
 
@@ -114,7 +116,12 @@ function buildParsleyData(linesOrFile) {
   for (var i = 0; i < eof; i++) {
     // Added trim much later, be wary of any weirdness
     var line = lines[i].replace(/\r?\n|\r/g,'').trim();
-  
+    if (isMediaAlias(line)) {
+      const [ short, title, author ] = line.split(/\s*(?:->|\[|\])\s*/);
+      if (!mediaAliases[short]) {
+        mediaAliases[short] = Object.assign({ title }, author && { author });
+      }
+    }
     if (isCommentStartHour(line)) {
       var startHour = +line.substr(1).trim().split(':')[0];
       if (currentDate && !isNaN(startHour)) {
@@ -176,10 +183,21 @@ function buildParsleyData(linesOrFile) {
     }
     parsley.media[task.media].tasks.push(task);
   });
-  for (let title in parsley.media) {
-    // TODO: make this properly handle media re-starts
-    // This sort will make dates be out of order on such items
-    parsley.media[title].tasks.sort((a, b) => a.progress - b.progress);
+  for (let item in parsley.media) {
+    // TODO: don't sort by progress but by data!
+    // This should properly handle media re-starts
+    parsley.media[item].tasks.sort((a, b) => a.progress - b.progress);
+
+    // Add full title and author properties, if available
+    if (!mediaAliases[item]) continue;
+    let { title, author } = mediaAliases[item];
+    Object.assign(
+       parsley.media[item],
+       { title },
+       author && { author },
+    );
+    // Add aliased name to map; consider changing
+    parsley.aliasMap[title] = item;
   }
 
   return parsley;
@@ -352,6 +370,10 @@ function buildParsleyData(linesOrFile) {
 
   function isStartHour(line) {
     return /^[sS]tart: [0-9][0-9]?\s*$/.test(line);
+  }
+
+  function isMediaAlias(line) {
+    return /^[a-zA-Z0-9+'\s]+\s?->\s?[a-zA-Z0-9+'\s_,\-.:\[\]]+$/.test(line);
   }
 }
 

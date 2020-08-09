@@ -215,6 +215,9 @@ export default class BookCovers extends React.Component {
   @observable titles = []
   __onBookDataCbs = []
 
+  _pluckTitlesFromMedia(media) {
+    return Object.keys(media).map(maybeTitle => media[maybeTitle].title || maybeTitle);
+  }
   componentDidMount() {
     window.b = this;
     const { common } = this.props;
@@ -223,11 +226,15 @@ export default class BookCovers extends React.Component {
     // the same sort of functionality.
     common.onParsleyData(parsleyData => {
       console.log(parsleyData);
-      const titles = Object.keys(parsleyData.media);
+
+      const titles = this._pluckTitlesFromMedia(parsleyData.media);
+      console.error(titles);
+
       this._loadThumbnails(titles)
       .then(googleData => {
          console.error('!!!!!!');
          // holy shit man, fix this!
+         // 2020: Wait, fix WHAT?!
          this._initBookItems(parsleyData.media, googleData);
          this.forceUpdate();
       })
@@ -407,7 +414,11 @@ export default class BookCovers extends React.Component {
   _getTitleInfo(title) {
     const { common: c } = this.props;
     if (!c.parsleyData) return {};
-    return c.parsleyData.media[title];
+    const { media } = c.parsleyData;
+    // TODO: don't like this implementation in parsley.
+    // Consider keying parsleyData.media to the full title
+    // instead of keeping an aliasMap
+    return media[title] || media[c.parsleyData.aliasMap[title]];
   }
 
   render() {
