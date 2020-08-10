@@ -102,7 +102,82 @@ function buildParsleyData(linesOrFile) {
       tasks = tasks || parsley.tasks;
       var baseArray = tasks.map(function(task) { return task[key]; });
       return baseArray.filter(function(v,i) { return baseArray.indexOf(v) == i && v});
+    },
+    /**
+     * VITARKA: different ES6 style; don't care
+     * Dumping this here for the time being; it MIGHT be more
+     * appropriate elsewhere, but putting it here both separates it
+     * from the main app and gives me easy access to the parsley object, 
+     * which will help with changing the case for lazily-entered book aliases.
+     * 
+     * It converts from a shorter format that I use on my phone. It should:
+     *  1. Take the scratch sheet and a callback
+     *  2. Convert it to standard format, with appropriate with and tabbing. 
+     *  3. For descriptions that were truncated, add an indented comment 
+     *     with the rest of the description right below it.
+     *  3. Merge the converted scratch sheet into a pomsheet string, but
+     *     without of course changing our closured parsley instance.
+     *  4. Invoke the callback, which will take as parameters two strings:
+     *    a. The merged version of the pomsheet we just made
+     *    b. An updated scratch sheet, with the processed dates prefixed with "@",
+     *      the termination marker
+     * 
+     * NOTE: In Vitarka, the intention is that the caller will use the callback 
+     * to write both to the scratch sheet AND to the pomsheet. It could cause
+     * an infinite loading loop if it doesn't make sure to avoid writing when
+     * it doesn't need to.
+    **/
+    mergeScratch(sheet, cb) {
+      const typeRegistry = {
+          date: {
+              regex: /^(\d\d?)\/(\d\d?)\/?(\d?\d?\d?\d?)\s*$/,
+              convert(line, parsley) {
+                  return line.replace(
+                      this.regex,
+                      // Add current year if not included
+                      '$1/$2/' + (RegExp.$3 ? '$3' : (new Date()).getFullYear()),
+                  );
+              }
+          },
+          task: {
+              regex: /^(\d\d?\.?5?)\s*([\w\s]+),\s*(\d\d?%?),\s*(.+)\s+([xX]*)$/,
+              convert(line, parsley) {
+                  return line.replace(
+                      this.regex,
+                      (...a) => {
+                        const length = (a[1]+a[2]+a[3]+a[4]+a[5]).length;
+          
+                        // Magic number 94 matches MY pomsheet, so don't ask!
+                        let trailingTabCount = Math.min(1, Math.ceil((94-length-8)/8));
+                        // Magic number 79 is just... it's just what works in my pomsheet.
+                        let body = `Read: ${a[2]} -> ${a[3]}, ${a[4]}`.slice(0,79);
+                        return `${a[1]}\t${body}${'\t'.repeat(trailingTabCount)}${(a[5]||'X').toUpperCase()}`;
+                      }
+                  );
+              }
+          }
+      };
+
+      // WIP: for now, just return the converted lines
+      return _convert(sheet, typeRegistry);
+
+      function _convert(sheet, registry) {
+        const lines = sheet.trim().split(/(\r?\n)/);
+        const linebreak = RegExp.$1; // for consistent joining
+        const converted = [];
+        
+        for (line of lines) {
+            // Convention is to preface a date with "@" when accounted for
+            // so break; not bothering to check if it's a date or not.
+            if (line[0] === '@') break;
+            const type = Object.keys(registry).find(n => registry[n].regex.test(line)); 
+            if (!type) continue; // ignore unmatchable lines
+            converted.push(registry[type].convert(line));
+        }
+        return converted.join(linebreak);
+      }
     }
+
 
   };
 
