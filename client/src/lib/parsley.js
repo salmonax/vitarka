@@ -170,28 +170,34 @@ function buildParsleyData(linesOrFile) {
                   return line.replace(
                       this.regex,
                       (_, time, title, progress, description, poms) => {
+                        title = _matchCaseToMedia(title, _parsley.media) || title
                         // Magic number, what I'm using on my pomsheet
                         const maxLineLength = 80;
                         // Likewise, used to split descriptions into multiple lines
                         const maxBodyLength = 79;
                         const tabLength = 8; // for clarity, below
-        
-                        // Magic number 79 is just... it's what works. Sigh, I give up.
-                        let body = `Read: ${title} -> ${progress}, ${description}`;
-                        let lineLength = body.length + title.length + tabLength + poms.length;
-                          
+                        
+                        const body = `Read: ${title} -> ${progress}, ${description}`;
                         let bodyLineOne, bodyLineTwo;
+
                         if (body.length >= maxBodyLength) {
                             const lastSpace = body.slice(0, maxBodyLength).lastIndexOf(' ');
                             bodyLineOne = body.slice(0, lastSpace);
                             bodyLineTwo = body.slice(lastSpace + 1);
-                        } 
+                        }
+
                         const trailingTabCount = Math.max(1, Math.ceil((maxLineLength-(bodyLineOne || body).length)/tabLength));
                         const tabsAndPoms = `${'\t'.repeat(trailingTabCount)}${(poms||'X').toUpperCase()}`;
                         return `${time}\t${bodyLineOne || body}${tabsAndPoms}`
                           + (bodyLineTwo ? `${linebreak}==\t      ${bodyLineTwo}` : '');
                       }
                   );
+                  
+                  function _matchCaseToMedia(sloppyTitle, media) {
+                    return Object.keys(media).find(title => {
+                      return sloppyTitle.toLowerCase() === title.toLowerCase();
+                    });
+                  }
               }
           }
       };
