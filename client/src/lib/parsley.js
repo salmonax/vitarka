@@ -1,3 +1,23 @@
+window.scratch =  `
+8/9
+19.5 foss, 16/217, intro, toc, community, origins X
+21 dg finance, 64%, Hollande's failure of SocDec, DG SocDec critique, horizontalism XX
+21.5 foss, 31, foss vs. floss, licensing issues X
+23 metastasis, 40, PI, problems with informational foundationalism, LOVE this guy! X
+25 p2p accounting, 16/126, wow! on post-capitalist logistics, regenerative commons X
+
+8/8
+21 aom, 12/225, intron on Breton v. Bataille as entangled opposites X
+21.5 rrevolution, 93, summary of diagnostic, notes, the future anterior X
+22 dg money, 7, tiring explanation of Schmitt's money-as-debt, wage-as-money-revenue X
+22.5 dg finance, 59%, mainstream and critical finance studies, from Lanzano to Lightfoot x
+23.5 stack, 7%, Schmitt, the grossraum, Anglo-saxon matrix hegemony xx
+24 sitanth, 20%, the dizzying shelters, survival v. living, positive project of vandalism x
+
+@7/23
+7/22
+`;
+
 /*
   This file is a million years old and should definitely be
   rewritten. The problem is that it "Just Works" as-is, even though
@@ -127,11 +147,11 @@ function buildParsleyData(linesOrFile) {
      * an infinite loading loop if it doesn't make sure to avoid writing when
      * it doesn't need to.
     **/
-    mergeScratch(sheet, cb) {
+    mergeScratch(sheet, cb, _parsley = parsley) {
       const typeRegistry = {
           date: {
               regex: /^(\d\d?)\/(\d\d?)\/?(\d?\d?\d?\d?)\s*$/,
-              convert(line, parsley) {
+              convert(line, linebreak) {
                   return line.replace(
                       this.regex,
                       // Add current year if not included
@@ -140,45 +160,63 @@ function buildParsleyData(linesOrFile) {
               }
           },
           task: {
-              regex: /^(\d\d?\.?5?)\s*([\w\s]+),\s*(\d\d?%?),\s*(.+)\s+([xX]*)$/,
-              convert(line, parsley) {
+              regex: /^(\d\d?\.?5?)\s*([\w\s]+),\s*(\d+?%?\/?\d*),\s*(.+)\s+([xX]*)$/,
+              normalize(line) {
+                 // Sigh, some lines don't end in "X", so add it if needed
+                 if (!/\s+[xX]+$/.test(line)) return line + ' X';
+                 return line;
+              },
+              convert(line, linebreak) {
                   return line.replace(
                       this.regex,
-                      (...a) => {
-                        const length = (a[1]+a[2]+a[3]+a[4]+a[5]).length;
-          
-                        // Magic number 94 matches MY pomsheet, so don't ask!
-                        let trailingTabCount = Math.min(1, Math.ceil((94-length-8)/8));
-                        // Magic number 79 is just... it's just what works in my pomsheet.
-                        let body = `Read: ${a[2]} -> ${a[3]}, ${a[4]}`.slice(0,79);
-                        return `${a[1]}\t${body}${'\t'.repeat(trailingTabCount)}${(a[5]||'X').toUpperCase()}`;
+                      (_, time, title, progress, description, poms) => {
+                        // Magic number, what I'm using on my pomsheet
+                        const maxLineLength = 80;
+                        // Likewise, used to split descriptions into multiple lines
+                        const maxBodyLength = 79;
+                        const tabLength = 8; // for clarity, below
+        
+                        // Magic number 79 is just... it's what works. Sigh, I give up.
+                        let body = `Read: ${title} -> ${progress}, ${description}`;
+                        let lineLength = body.length + title.length + tabLength + poms.length;
+                          
+                        let bodyLineOne, bodyLineTwo;
+                        if (body.length >= maxBodyLength) {
+                            const lastSpace = body.slice(0, maxBodyLength).lastIndexOf(' ');
+                            bodyLineOne = body.slice(0, lastSpace);
+                            bodyLineTwo = body.slice(lastSpace + 1);
+                        } 
+                        const trailingTabCount = Math.max(1, Math.ceil((maxLineLength-(bodyLineOne || body).length)/tabLength));
+                        const tabsAndPoms = `${'\t'.repeat(trailingTabCount)}${(poms||'X').toUpperCase()}`;
+                        return `${time}\t${bodyLineOne || body}${tabsAndPoms}`
+                          + (bodyLineTwo ? `${linebreak}==\t      ${bodyLineTwo}` : '');
                       }
                   );
               }
           }
       };
-
-      // WIP: for now, just return the converted lines
-      return _convert(sheet, typeRegistry);
-
-      function _convert(sheet, registry) {
-        const lines = sheet.trim().split(/(\r?\n)/);
-        const linebreak = RegExp.$1; // for consistent joining
-        const converted = [];
+      
+      return convertScratch(sheet, typeRegistry);
         
-        for (line of lines) {
-            // Convention is to preface a date with "@" when accounted for
-            // so break; not bothering to check if it's a date or not.
-            if (line[0] === '@') break;
-            const type = Object.keys(registry).find(n => registry[n].regex.test(line)); 
-            if (!type) continue; // ignore unmatchable lines
-            converted.push(registry[type].convert(line));
-        }
-        return converted.join(linebreak);
+      function convertScratch(sheet, registry) {
+          const lines = sheet.trim().split(/(\r?\n)/);
+          const linebreak = RegExp.$1; // make consistent
+          const converted = [];
+          for (line of lines) {
+              // Convention is to preface an item with "@" when accounted for
+              // so break when the first one is found.
+              if (line[0] === '@') break;
+              Object.keys(registry).some(type => {
+                  const { regex, normalize } = registry[type];
+                  const normalized = normalize ? normalize(line) : line;
+                  if (!regex.test(normalized)) return false;
+                  converted.push(registry[type].convert(normalized, linebreak));
+                  return true;
+              });
+          }
+          return converted.join(linebreak);
       }
     }
-
-
   };
 
   var statsKeys = "year month week tag category subcategory media".split(' ');
