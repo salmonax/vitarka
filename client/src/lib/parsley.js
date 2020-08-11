@@ -1,4 +1,6 @@
 window.scratch =  `
+8/10
+26 germinal, 4%, chronology, rather great intro XX
 8/9
 19.5 foss, 16/217, intro, toc, community, origins X
 21 dg finance, 64%, Hollande's failure of SocDec, DG SocDec critique, horizontalism XX
@@ -58,6 +60,17 @@ function buildParsleyData(linesOrFile) {
       }
       // If no index is found, will return false
       return !!comps[nearestSmallerIndex] && (new Date(comps[nearestSmallerIndex]).toLocaleDateString());
+    },
+    adjustedUTC() {
+      // VITARKA: CANONICAL adjustedUTC, adapted from Vitarka, but dynamic
+      // Simply add 20 to the latestStartHour, but no greater than 36 (ie. 12 noon)
+      return Date.now()-(Math.min(36,this.latestStartHour() + 20) - 24) * 36e5;
+    },
+    adjustedDateString() {
+      // TODO: the locale should be set explicitly somewhere and
+      // verified to work correctly. Hardcoding to what my own pomsheet
+      // uses for now.
+      return (new Date(this.adjustedUTC())).toLocaleDateString('en-EN');
     },
     latestStartHour: function() {
       return this.startHours[this.getNearestDayWithStartHour(Date.now(), true)] ||
@@ -132,7 +145,7 @@ function buildParsleyData(linesOrFile) {
      * 
      * It converts from a shorter format that I use on my phone. It should:
      *  1. Take the scratch sheet and a callback
-     *  2. Convert it to standard format, with appropriate with and tabbing. 
+     *  2. Convert it to standard format, with appropriate width and tabbing. 
      *  3. For descriptions that were truncated, add an indented comment 
      *     with the rest of the description right below it.
      *  3. Merge the converted scratch sheet into a pomsheet string, but
@@ -146,31 +159,40 @@ function buildParsleyData(linesOrFile) {
      * to write both to the scratch sheet AND to the pomsheet. It could cause
      * an infinite loading loop if it doesn't make sure to avoid writing when
      * it doesn't need to.
+     * 
+     * UPDATE: CPS is stupid unless this is async, which it isn't, so no longer
+     * taking a callback
     **/
-    mergeScratch(sheet, cb, _parsley = parsley) {
+    mergeScratch(sheet, _parsley = parsley) {
       const typeRegistry = {
           date: {
               regex: /^(\d\d?)\/(\d\d?)\/?(\d?\d?\d?\d?)\s*$/,
-              convert(line, linebreak) {
+              convert(line) {
                   return line.replace(
                       this.regex,
                       // Add current year if not included
                       '$1/$2/' + (RegExp.$3 ? '$3' : (new Date()).getFullYear()),
                   );
+              },
+              after(original, converted) {
+                if (converted !== _parsley.adjustedDateString()) {
+                  return '@' + original;
+                }
+                return original;
               }
           },
           task: {
               regex: /^(\d\d?\.?5?)\s*([\w\s]+),\s*(\d+?%?\/?\d*),\s*(.+)\s+([xX]*)$/,
-              normalize(line) {
+              before(line) {
                  // Sigh, some lines don't end in "X", so add it if needed
                  if (!/\s+[xX]+$/.test(line)) return line + ' X';
                  return line;
               },
-              convert(line, linebreak) {
+              convert(line, linebreak = '\n') {
                   return line.replace(
                       this.regex,
                       (_, time, title, progress, description, poms) => {
-                        title = _matchCaseToMedia(title, _parsley.media) || title
+                        title = _matchCaseToMedia(title, _parsley.media) || title;
                         // Magic number, what I'm using on my pomsheet
                         const maxLineLength = 80;
                         // Likewise, used to split descriptions into multiple lines
@@ -201,26 +223,29 @@ function buildParsleyData(linesOrFile) {
               }
           }
       };
-      
+
       return convertScratch(sheet, typeRegistry);
-        
+            
       function convertScratch(sheet, registry) {
-          const lines = sheet.trim().split(/(\r?\n)/);
-          const linebreak = RegExp.$1; // make consistent
-          const converted = [];
-          for (line of lines) {
-              // Convention is to preface an item with "@" when accounted for
-              // so break when the first one is found.
-              if (line[0] === '@') break;
-              Object.keys(registry).some(type => {
-                  const { regex, normalize } = registry[type];
-                  const normalized = normalize ? normalize(line) : line;
-                  if (!regex.test(normalized)) return false;
-                  converted.push(registry[type].convert(normalized, linebreak));
-                  return true;
-              });
+          const scratchLines = window.lines =  sheet.trim().split(/(?:\r?\n)/);
+          const convertedLines = [];
+          for (let i = 0; i < scratchLines.length; i++) {
+            const line = scratchLines[i];
+            // Convention is to preface an item with "@" when accounted for
+            // so break when the first one is found.
+            if (line[0] === '@') break;
+            Object.keys(registry).some(type => {
+                const { regex, before, after } = registry[type];
+                const normalizedTarget = before ? before(line) : line;
+                if (!regex.test(normalizedTarget)) return false;
+                const convertedLine = registry[type].convert(normalizedTarget);
+                convertedLines.push(convertedLine);
+                // Yes, mutating in place. Get off my lawn!
+                scratchLines[i] = (after) ? after(line, convertedLine) : line;
+                return true;
+            });
           }
-          return converted.join(linebreak);
+          return { converted: convertedLines, updated: scratchLines.join('\n') };
       }
     }
   };
