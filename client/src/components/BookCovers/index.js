@@ -112,8 +112,8 @@ class BookChart extends React.Component {
       this.chart.series[0].setData(this.data.pointsActual,true);
       this.chart.addSeries([]);
       this.chart.series[1].setData(this.data.pointsIfDaily,true);
-      this.chart.addSeries([]);
-      this.chart.series[2].setData(this.data.pointsIfWeekly,true);
+      // this.chart.addSeries([]);
+      // this.chart.series[2].setData(this.data.pointsIfWeekly,true);
 
     });
   }
@@ -123,7 +123,8 @@ class BookChart extends React.Component {
     // If the user has clicked a book, it's presumed
     // that the data has already been loaded
     const { common: c } = this.props;
-    const bookData = c.parsleyData.media[c.selectedBook];
+    // TODO: Uhh... yeah, change.
+    const bookData = c.parsleyData.media[c.selectedBook] || c.parsleyData.media[c.parsleyData.aliasMap[c.selectedBook]];
     const { goal, tasks } = bookData;
     // Parsley sorts tasks by progress
     let byDate = {};
@@ -314,6 +315,7 @@ export default class BookCovers extends React.Component {
   }
   __search = (title, books = this._books) => {
     return books.volumes.list({ q: title, maxResults: 3 }).then(data => {
+      console.warn(data.result.items)
       return data.result.items;
     });
   }

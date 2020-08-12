@@ -223,7 +223,8 @@ export default class Common {
     return this.getBlockInfoToday();
   }
 
-
+  // NOTE: This method of checking the heartbeat does literally 
+  // nothing on Cordova, so make sure to check for it.
   startNetworkHeartbeat(interval = 30000, offlineInterval = 5000) {
     if (this._heartbeatTimeout) window.clearTimeout(this._heartbeatTimeout);
     let _resolveCheck;

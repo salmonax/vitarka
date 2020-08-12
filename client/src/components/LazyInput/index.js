@@ -240,7 +240,8 @@ export default class LazyInput extends Component {
       }}>
         <pre style={{
           position: 'absolute',
-          width: '80%',
+          width: 500,
+          marginRight: 100,
           fontSize: 10,
           pointerEvents: 'none',
           right: 0,

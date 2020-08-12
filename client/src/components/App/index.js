@@ -100,6 +100,8 @@ export default class App extends Component {
       return this._mobileLayout();
     }
 
+    return (<LazyInput/>)
+
     // return(
     //   <Bindu/>
     // );

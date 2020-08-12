@@ -6,6 +6,8 @@
 import { fetch } from 'whatwg-fetch';
 
 import fetchStream from 'fetch-readablestream';
+
+// OH NOO! Why the FUCK is the syncBus imported at THIS level?!
 import $syncBus from './pubnub';
 
 import md5 from 'js-md5';
