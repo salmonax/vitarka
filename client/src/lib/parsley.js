@@ -1,17 +1,24 @@
 window.scratch =  `
+8/12
+13 yeah let's see X
 8/10
 26 germinal, 4%, chronology, rather great intro XX
 8/9
 19.5 foss, 16/217, intro, toc, community, origins X
 21 dg finance, 64%, Hollande's failure of SocDec, DG SocDec critique, horizontalism XX
+
+
 21.5 foss, 31, foss vs. floss, licensing issues X
+
 23 metastasis, 40, PI, problems with informational foundationalism, LOVE this guy! X
 25 p2p accounting, 16/126, wow! on post-capitalist logistics, regenerative commons X
 
 8/8
 21 aom, 12/225, intron on Breton v. Bataille as entangled opposites X
+
 21.5 rrevolution, 93, summary of diagnostic, notes, the future anterior X
 22 dg money, 7, tiring explanation of Schmitt's money-as-debt, wage-as-money-revenue X
+
 22.5 dg finance, 59%, mainstream and critical finance studies, from Lanzano to Lightfoot x
 23.5 stack, 7%, Schmitt, the grossraum, Anglo-saxon matrix hegemony xx
 24 sitanth, 20%, the dizzying shelters, survival v. living, positive project of vandalism x
@@ -33,10 +40,15 @@ const PARSLEY_DEFAULTS = {
 };
 
 function buildParsleyData(linesOrFile) {
-  var lines = Array.isArray(linesOrFile) ? linesOrFile : linesOrFile.split(/\n/);
+  // Intentionally preserve linebreaks with match group, for later
+  // reconstitution
+  var lines = Array.isArray(linesOrFile) ? linesOrFile : linesOrFile.split(/(\r?\n)/);
   var currentDate;
   var mediaAliases = {};
+  var dateBucket = {}; 
   var parsley = {
+    dateBucket,
+    linebreak: RegExp.$1,
     lines: lines,
     tasks: [],
     tags: {},
@@ -47,6 +59,9 @@ function buildParsleyData(linesOrFile) {
     startHours: { },
     DEFAULTS: PARSLEY_DEFAULTS,
 
+    hasDate(string) {
+      return !!dateBucket[string];
+    },
     dayTarget: function(dateWithOffset) {
       var index = monthName(dateWithOffset.getMonth());
       return parsley.targets[index] || PARSLEY_DEFAULTS.dayTarget;
@@ -64,6 +79,11 @@ function buildParsleyData(linesOrFile) {
     adjustedUTC() {
       // VITARKA: CANONICAL adjustedUTC, adapted from Vitarka, but dynamic
       // Simply add 20 to the latestStartHour, but no greater than 36 (ie. 12 noon)
+      // This won't *always* be right, but the optimal heuristic will go here.
+      // For instance, here are two good cases to inform said heuristic:
+      // 1. Compare the highest hour recorded on "yesterday"; if it's higher than
+      // startHour + 20, fall back to 36.
+      // 2. If the new day exists and has poms logged already, zero out the offset.
       return Date.now()-(Math.min(36,this.latestStartHour() + 20) - 24) * 36e5;
     },
     adjustedDateString() {
@@ -174,11 +194,19 @@ function buildParsleyData(linesOrFile) {
                       '$1/$2/' + (RegExp.$3 ? '$3' : (new Date()).getFullYear()),
                   );
               },
-              after(original, converted) {
-                if (converted !== _parsley.adjustedDateString()) {
-                  return '@' + original;
+              after(originalLine, convertedDateString) {
+                // WARNING: there's an edge case where a date larger than
+                // the adjustedDateString won't be be marked. It's expected
+                // behavior, but the subjective experience will be that it's
+                // annoyingly refusing to mark both today's AND yesterday's date.
+                //
+                // TODO: once adjustedUTC has taken the latest pomsheet date into account,
+                // make sure to also "phone home" when/if the scratch sheet has a higher
+                // date, thereby fixing this.
+                if (new Date(convertedDateString) < new Date(_parsley.adjustedDateString())) {
+                  return '@' + originalLine;
                 }
-                return original;
+                return originalLine;
               }
           },
           task: {
@@ -224,28 +252,48 @@ function buildParsleyData(linesOrFile) {
           }
       };
 
-      return convertScratch(sheet, typeRegistry);
-            
+      const { convertedScratchLines, updatedScratch } = convertScratch(sheet, typeRegistry);
+      
+      return {
+        updatedPomsheet: buildMergedPomsheet(convertedScratchLines),
+        updatedScratch,
+      };
+
+      function buildMergedPomsheet(scratchData, _parsley = parsley) {
+        /**
+         * 1. If no corresponding date exists in the new pomsheet, create it.
+         * 2. If the date's there, start going down and interleaving, in order
+         * 3. Clump the reading poms together, separating by at most one line from previous and next items
+         */
+        scratchData.forEach(record => {
+
+        });
+
+        // For now, just return the normal reconstituted file
+        return parsley.lines.join('');
+      }
       function convertScratch(sheet, registry) {
-          const scratchLines = window.lines =  sheet.trim().split(/(?:\r?\n)/);
-          const convertedLines = [];
-          for (let i = 0; i < scratchLines.length; i++) {
-            const line = scratchLines[i];
-            // Convention is to preface an item with "@" when accounted for
-            // so break when the first one is found.
-            if (line[0] === '@') break;
-            Object.keys(registry).some(type => {
-                const { regex, before, after } = registry[type];
-                const normalizedTarget = before ? before(line) : line;
-                if (!regex.test(normalizedTarget)) return false;
-                const convertedLine = registry[type].convert(normalizedTarget);
-                convertedLines.push(convertedLine);
-                // Yes, mutating in place. Get off my lawn!
-                scratchLines[i] = (after) ? after(line, convertedLine) : line;
-                return true;
-            });
-          }
-          return { converted: convertedLines, updated: scratchLines.join('\n') };
+        // Intentionally preserve linebreaks with matchgroup
+        const scratchLines = sheet.trim().split(/(\r?\n)/);
+        const convertedLines = [];
+        for (let i = 0; i < scratchLines.length; i++) {
+          const line = scratchLines[i];
+          // Convention is to preface an item with "@" when accounted for
+          // so break when the first one is found.
+          if (line[0] === '@') break;
+          Object.keys(registry).some(type => {
+              const { regex, before, after } = registry[type];
+              const normalizedTarget = before ? before(line) : line;
+              if (!regex.test(normalizedTarget)) return false;
+              const convertedLine = registry[type].convert(normalizedTarget);
+              convertedLines.push(convertedLine);
+              // Yes, mutating in place. Get off my lawn!
+              scratchLines[i] = (after) ? after(line, convertedLine) : line;
+              return true;
+          });
+        }
+        // TODO: attach tokenization to lines, for ease of comparison when merging
+        return { convertedScratchLines: convertedLines, updatedScratch: scratchLines.join('') };
       }
     }
   };
@@ -259,6 +307,7 @@ function buildParsleyData(linesOrFile) {
   var eof = lines.length;
   for (var i = 0; i < eof; i++) {
     // Added trim much later, be wary of any weirdness
+    // VITARKA: next line won't do anything; should probably nix replace and trim
     var line = lines[i].replace(/\r?\n|\r/g,'').trim();
     if (isMediaAlias(line)) {
       const [ short, title, author ] = line.split(/\s*(?:->|\[|\])\s*/);
@@ -284,9 +333,16 @@ function buildParsleyData(linesOrFile) {
     }
     if (isDate(line)) {
       currentDate = line;
+      // WARNING: there's an assumption built in here that dates will only appear once.
+      // Up until now, it hasn't mattered, and the file has never actually been order-dependent, either
+      // I definitely need to decide how to deal with that case; I can still only store one index,
+      // say, and decide that it'll always be the one at the top, or at the bottom. Or I can
+      // store a list of indices and deal with it wherever it's used, just needs to be deliberate.
+      dateBucket[currentDate] = { index: i, tasks: [], next: null, prev: null, utc: Date.parse(line) };
     } else if (isTask(line)) {
       var task = parseTask(line,i);
       parsley.tasks.push(task);
+      parsley.dateBucket[currentDate].tasks.push(task);
       updateStats(task);
     } else if (isTarget(line)) {
       //syntax doesn't specify or even care about a YEAR yet, but should.
@@ -344,6 +400,16 @@ function buildParsleyData(linesOrFile) {
     parsley.aliasMap[title] = item;
   }
 
+  // VITARKA: link up the dateBucket, currently used for sheet merges
+  Object.keys(dateBucket)
+  .sort((a, b) => b.utc - a.utc)
+  .forEach((date, i, dates)=> 
+    Object.assign(dateBucket[date], {
+      next: dateBucket[dates[i+1]],
+      prev: dateBucket[dates[i-1]],
+    }),
+  );
+  
   return parsley;
 
   function updateStats(task) {

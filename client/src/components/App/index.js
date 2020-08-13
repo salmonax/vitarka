@@ -100,11 +100,11 @@ export default class App extends Component {
       return this._mobileLayout();
     }
 
-    return (<LazyInput/>)
+    // return (<LazyInput/>)
 
-    // return(
-    //   <Bindu/>
-    // );
+    return(
+      <Bindu/>
+    );
 
     return(
       <div style={{color: 'white'}}>
