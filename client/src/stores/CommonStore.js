@@ -99,7 +99,7 @@ export default class Common {
   @action.bound onFirstPomsheetChunk(text) {
     this.updatedOnFocus = 'I did it! ' + Date.now();
     console.log('called onFirstPomsheetChunk');
-    const partialParsleyData = ParsleyService.buildParsleyData(text);
+    const partialParsleyData = ParsleyService.buildParsleyData(text, { partialOnly: true });
     this.parsleyData = partialParsleyData;
     this.pomsToday = this.pomsDaysAgo(0, partialParsleyData);
     this.diegesis = this.getDiegesis();
@@ -118,6 +118,7 @@ export default class Common {
     this.pomsToday = this.pomsDaysAgo(0);
     this.diegesis = this.getDiegesis();
     this.runParsleyCallbacks(this.parsleyData);
+    this.parsleyData.mergeScratch(window.scratch);
     return this.parsleyData;
   }
 

@@ -1,5 +1,12 @@
 window.scratch =  `
-8/12
+8/14
+19.5 foss, 16/217, intro, toc, community, origins X
+21 dg finance, 64%, Hollande's failure of SocDec, DG SocDec critique, horizontalism XX
+21.5 foss, 31, foss vs. floss, licensing issues X
+23 metastasis, 40, PI, problems with informational foundationalism, LOVE this guy! X
+25 p2p accounting, 16/126, wow! on post-capitalist logistics, regenerative commons X
+
+8/11
 13 yeah let's see X
 8/10
 26 germinal, 4%, chronology, rather great intro XX
@@ -13,7 +20,7 @@ window.scratch =  `
 23 metastasis, 40, PI, problems with informational foundationalism, LOVE this guy! X
 25 p2p accounting, 16/126, wow! on post-capitalist logistics, regenerative commons X
 
-8/8
+12/6/2016
 21 aom, 12/225, intron on Breton v. Bataille as entangled opposites X
 
 21.5 rrevolution, 93, summary of diagnostic, notes, the future anterior X
@@ -39,7 +46,11 @@ const PARSLEY_DEFAULTS = {
   dayStartHour: 9,
 };
 
-function buildParsleyData(linesOrFile) {
+const DEFAULT_OPTS = {
+  partialOnly: false, // Lets Parsley know that it's not the whole pomsheet
+}
+
+function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
   // Intentionally preserve linebreaks with match group, for later
   // reconstitution
   var lines = Array.isArray(linesOrFile) ? linesOrFile : linesOrFile.split(/(\r?\n)/);
@@ -59,6 +70,7 @@ function buildParsleyData(linesOrFile) {
     startHours: { },
     DEFAULTS: PARSLEY_DEFAULTS,
 
+    parseTask, // VITARKA: attached to keep mergeScratch pure-ish
     hasDate(string) {
       return !!dateBucket[string];
     },
@@ -98,9 +110,9 @@ function buildParsleyData(linesOrFile) {
     },
     startHour: function(adjustedUTC) {
       return parsley.startHours[(new Date(adjustedUTC).toLocaleDateString())] ||
-        // Vitarka: this needs to be clamped to not be buggy, but uncomment to 
-        // always get the startHour from the previous date
-        // parsley.startHours[parsley.getNearestDayWithStartHour(adjustedUTC)] ||
+        // VITARKA: this probably needs to be clamped to not be buggy;
+        // also, should probably be a configurable option 
+        parsley.startHours[parsley.getNearestDayWithStartHour(adjustedUTC, true)] ||
         parsley.DEFAULTS.dayStartHour;
     },
     dayTotal: function(dateWithOffset,separateOffset) {
@@ -185,117 +197,302 @@ function buildParsleyData(linesOrFile) {
     **/
     mergeScratch(sheet, _parsley = parsley) {
       const typeRegistry = {
-          date: {
-              regex: /^(\d\d?)\/(\d\d?)\/?(\d?\d?\d?\d?)\s*$/,
-              convert(line) {
-                  return line.replace(
-                      this.regex,
-                      // Add current year if not included
-                      '$1/$2/' + (RegExp.$3 ? '$3' : (new Date()).getFullYear()),
-                  );
-              },
-              after(originalLine, convertedDateString) {
-                // WARNING: there's an edge case where a date larger than
-                // the adjustedDateString won't be be marked. It's expected
-                // behavior, but the subjective experience will be that it's
-                // annoyingly refusing to mark both today's AND yesterday's date.
-                //
-                // TODO: once adjustedUTC has taken the latest pomsheet date into account,
-                // make sure to also "phone home" when/if the scratch sheet has a higher
-                // date, thereby fixing this.
-                if (new Date(convertedDateString) < new Date(_parsley.adjustedDateString())) {
-                  return '@' + originalLine;
-                }
-                return originalLine;
-              }
+        date: {
+          regex: /^(\d\d?)\/(\d\d?)\/?(\d?\d?\d?\d?)\s*$/,
+          convert(line) {
+            return line.replace(
+              this.regex,
+              // Add current year if not included
+              '$1/$2/' + (RegExp.$3 ? '$3' : (new Date()).getFullYear()),
+            );
           },
-          task: {
-              regex: /^(\d\d?\.?5?)\s*([\w\s]+),\s*(\d+?%?\/?\d*),\s*(.+)\s+([xX]*)$/,
-              before(line) {
-                 // Sigh, some lines don't end in "X", so add it if needed
-                 if (!/\s+[xX]+$/.test(line)) return line + ' X';
-                 return line;
-              },
-              convert(line, linebreak = '\n') {
-                  return line.replace(
-                      this.regex,
-                      (_, time, title, progress, description, poms) => {
-                        title = _matchCaseToMedia(title, _parsley.media) || title;
-                        // Magic number, what I'm using on my pomsheet
-                        const maxLineLength = 80;
-                        // Likewise, used to split descriptions into multiple lines
-                        const maxBodyLength = 79;
-                        const tabLength = 8; // for clarity, below
-                        
-                        const body = `Read: ${title} -> ${progress}, ${description}`;
-                        let bodyLineOne, bodyLineTwo;
-
-                        if (body.length >= maxBodyLength) {
-                            const lastSpace = body.slice(0, maxBodyLength).lastIndexOf(' ');
-                            bodyLineOne = body.slice(0, lastSpace);
-                            bodyLineTwo = body.slice(lastSpace + 1);
-                        }
-
-                        const trailingTabCount = Math.max(1, Math.ceil((maxLineLength-(bodyLineOne || body).length)/tabLength));
-                        const tabsAndPoms = `${'\t'.repeat(trailingTabCount)}${(poms||'X').toUpperCase()}`;
-                        return `${time}\t${bodyLineOne || body}${tabsAndPoms}`
-                          + (bodyLineTwo ? `${linebreak}==\t      ${bodyLineTwo}` : '');
-                      }
-                  );
-                  
-                  function _matchCaseToMedia(sloppyTitle, media) {
-                    return Object.keys(media).find(title => {
-                      return sloppyTitle.toLowerCase() === title.toLowerCase();
-                    });
-                  }
-              }
+          after(originalLine, convertedDateString) {
+            // WARNING: there's an edge case where a date larger than
+            // the adjustedDateString won't be be marked. It's expected
+            // behavior, but the subjective experience will be that it's
+            // annoyingly refusing to mark both today's AND yesterday's date
+            // in certain cases
+            //
+            // TODO: once adjustedUTC has taken the latest pomsheet date into account,
+            // make sure to also "phone home" when/if the scratch sheet has a higher
+            // date, thereby fixing this.
+            if (new Date(convertedDateString) < new Date(_parsley.adjustedDateString())) {
+              return '@' + originalLine;
+            }
+            return originalLine;
+          },
+          parse(converted) {
+            return Date.parse(converted);
           }
+        },
+        task: {
+          regex: /^(\d\d?\.?5?)\s*([\w\s]+),\s*(\d+?%?\/?\d*),\s*(.+)\s+([xX]*)$/,
+          before(line) {
+            // Sigh, some lines don't end in "X", so add it if needed
+            if (!/\s+[xX]+$/.test(line)) return line + ' X';
+            return line;
+          },
+          convert(line, linebreak = '\n') {
+            return line.replace(
+              this.regex,
+              (_, time, title, progress, description, poms) => {
+                title = _matchCaseToMedia(title, _parsley.media) || title;
+                // Magic number, what I'm using on my pomsheet
+                const maxLineLength = 80;
+                // Likewise, used to split descriptions into multiple lines
+                const maxBodyLength = 79;
+                const tabLength = 8; // for clarity, below
+    
+                const body = `Read: ${title} -> ${progress}, ${description}`;
+                let bodyLineOne, bodyLineTwo;
+    
+                if (body.length >= maxBodyLength) {
+                  const lastSpace = body.slice(0, maxBodyLength).lastIndexOf(' ');
+                  bodyLineOne = body.slice(0, lastSpace);
+                  bodyLineTwo = body.slice(lastSpace + 1);
+                }
+    
+                const trailingTabCount = Math.max(1, Math.ceil((maxLineLength - (bodyLineOne || body).length) / tabLength));
+                const tabsAndPoms = `${'\t'.repeat(trailingTabCount)}${(poms || 'X').toUpperCase()}`;
+                return `${time}\t${bodyLineOne || body}${tabsAndPoms}`
+                  + (bodyLineTwo ? `${linebreak}==\t      ${bodyLineTwo}` : '');
+              }
+            );
+    
+            function _matchCaseToMedia(sloppyTitle, media) {
+              return Object.keys(media).find(title => {
+                return sloppyTitle.toLowerCase() === title.toLowerCase();
+              });
+            }
+          },
+          parse(converted, lastOfType) {
+            return _parsley.parseTask(converted, -1, lastOfType.date);
+          },
+        },
       };
-
+    
       const { convertedScratchLines, updatedScratch } = convertScratch(sheet, typeRegistry);
-      
+    
       return {
         updatedPomsheet: buildMergedPomsheet(convertedScratchLines),
         updatedScratch,
       };
-
+    
       function buildMergedPomsheet(scratchData, _parsley = parsley) {
+        const clonedLines = _parsley.lines.slice()//(0, 540); // expand to test case until this is done
+    
+        const { dateBucket, linebreak: br } = _parsley;
+        const dates = Object.keys(dateBucket).sort((a, b) => b.utc - a.utc);
+        const mergedScratchDateBucket = {};
         /**
-         * 1. If no corresponding date exists in the new pomsheet, create it.
-         * 2. If the date's there, start going down and interleaving, in order
-         * 3. Clump the reading poms together, separating by at most one line from previous and next items
+         * Hmm, on second thought, why don't we just:
+         * 1. have scratchDateBucket merge tasks with the pomsheet, then reverse sort them 
+         * 2. in the next forEach, in the date-is-in-pomsheet case, instead of iterating across
+         *  dateBucket items, iterate across the merged ones. Whenever the index is -1, 
+         *  grab the last item it found and insert it above. 
+         * 3. If it's the last item, use the current date's endIndex
          */
-        scratchData.forEach(record => {
-
+        // Annoyingly, legacy parsley doesn't provide metadata, so do it here
+        const toWrapped = task => ({ parsed: task, type: 'task', text: _parsley.lines[task.index] });
+        scratchData.forEach(line => {
+          if (line.type === 'task') {
+            const taskDate = line.parsed.date;
+            if (!mergedScratchDateBucket[taskDate]) {
+              // Keep consistent with other dateBucket, just because
+              mergedScratchDateBucket[taskDate] = {
+                tasks: _parsley.dateBucket[taskDate] ? _parsley.dateBucket[taskDate].tasks.map(toWrapped) : []
+              };
+            }
+            mergedScratchDateBucket[taskDate].tasks.push(line);
+          }
         });
-
-        // For now, just return the normal reconstituted file
-        return parsley.lines.join('');
+        // Now reverse sort all of these for merge
+        Object.keys(mergedScratchDateBucket).forEach(date => {
+          mergedScratchDateBucket[date].tasks.sort((a, b) => +b.parsed.time - +a.parsed.time);
+        });
+    
+        // WARNING: this is an awful way to do this; we shouldn't need to re-parse the dates.
+        // Leaving it for now.
+        const allDates =
+          Object.keys(dateBucket)
+            .concat(Object.keys(mergedScratchDateBucket))
+            .filter((n, i, a) => a.indexOf(n) === i)
+            .map(text => ({ type: 'date', parsed: Date.parse(text), text }))
+            .sort((a, b) => a.parsed - b.parsed)
+    
+        let dateInsertion = {
+          cursor: null,
+          mergedLine: '',
+          prepend: '',
+        };
+    
+        allDates.forEach(({ type, text: dateText, parsed }, i, _allDates) => {
+          if (!mergedScratchDateBucket[dateText]) return; // only interested in scratch-only dates
+    
+          const dateAbove = _allDates[i + 1] && _allDates[i + 1].text;
+          const dateBelow = _allDates[i - 1] && _allDates[i - 1].text;
+          if (_parsley.hasDate(dateText)) {
+            const date = dateBucket[dateText];
+            const mergedTasks = mergedScratchDateBucket[dateText].tasks;
+    
+            // dateBucket[dateText].tasks.forEach(n => console.log(n.index, _parsley.lines[n.index]));
+    
+            const needsMerge = task => task.parsed.index === -1;
+            let insertion = {
+              cursor: null,
+              mergedLine: '',
+              prepend: '',
+            };
+            mergedTasks.forEach((task, i, tasks) => {
+              let taskBelow = tasks[i - 1];
+              let taskAbove = tasks[i + 1];
+              if (needsMerge(task)) {
+                if (taskBelow) {
+                  // If the task underneath it doesn't need to be merged,
+                  // it means that this is the first task in an insertion set, 
+                  // so set the cursor and initiate the line
+                  if (!needsMerge(taskBelow)) {
+                    insertion.cursor = taskBelow.parsed.index;
+                    // Add an extra linebreak between the task being anchored and the text
+                    insertion.mergedLine = task.text + br + taskBelow.text;
+                  } else {
+                    insertion.mergedLine = task.text + br + insertion.mergedLine;
+                  }
+                } else {
+                  // If there's no task below, use the date's endIndex, which is always
+                  // either the line before the next date or the end of the file
+    
+                  // We need to pay attention to the following conditions:
+                  //
+                  // 1. Whether the line at the cursor is blank, which can
+                  // be false at the end of the file if it lacks a trailing linebreak. In
+                  // this case, prepend the line instead of using it to start the insertion
+                  // 2. Whether the line *above* the cursor has content, which happens
+                  // when no trailing linebreak is added between dates; in this case, start
+                  // the insertion with an additional linebreak.
+                  const lineAtCursor = clonedLines[date.endIndex];
+                  const lineAboveCursor = clonedLines[date.endIndex - 1];
+                  let startingInsertion;
+                  if (/^\s*\r?\n?\s*$/.test(lineAtCursor)) { // case 1
+                    startingInsertion = lineAtCursor;
+                    insertion.prepend = /^\s*\r?\n?\s*$/.test(lineAboveCursor) ? '' : br; // case 2
+                  } else {
+                    startingInsertion = br;
+                    insertion.prepend = lineAtCursor + br;
+                  }
+    
+                  insertion.cursor = date.endIndex;
+                  insertion.mergedLine = task.text + br + startingInsertion;
+    
+                }
+              }
+              if (!needsMerge(task) || !taskAbove) {
+                if (insertion.cursor) {
+                  clonedLines[insertion.cursor] = insertion.prepend + insertion.mergedLine;
+    
+                  insertion.cursor = null;
+                  insertion.mergedLine = '';
+                  insertion.prepend = '';
+                }
+              }
+            });
+          } else {
+            // If we're here, no date was found in the pomsheet, so we need to start
+            // concatenating any such dates for which that's consecutively the case.
+            const joinedDateAndTasks =
+              dateText + br + br +
+              mergedScratchDateBucket[dateText].tasks.map(n => n.text).join(br); //+
+    
+            // This is just to keep semantics identical to task logic:
+            const dateNeedsMerge = date => !dateBucket[date];
+    
+            if (dateBelow) {
+              // If dateBelow was already in the original, it means
+              // this is the first date in an insertion set, so concatenate 
+              // it with joinedDateAndTasks and set the cursor
+              if (!dateNeedsMerge(dateBelow)) {
+                dateInsertion.cursor = dateBucket[dateBelow].index;
+                // Since we're anchoring to a date, line above will be a linebreak, and
+                // two above will be either another linebreak (which we want), or a string, or
+                // undefined due to being the beginning of the file.
+                // If it's neither empty NOR undefined, we want to prepend a linebreak, so
+                // that it doesn't run flush with the last task of the date above it
+                const lineTwoAboveCursor = clonedLines[dateInsertion.cursor - 2];
+                if (!/^\s*\r?\n?\s*$/.test(lineTwoAboveCursor) && lineTwoAboveCursor !== undefined) {
+                  dateInsertion.prepend = br;
+                }
+                dateInsertion.mergedLine = joinedDateAndTasks + br + br + dateBelow;
+              } else {
+                dateInsertion.mergedLine = joinedDateAndTasks + br + br + dateInsertion.mergedLine;
+              }
+            } else {
+              // No dateBelow means we're anchoring to the end of the last date
+              dateInsertion.cursor = dateBucket[dates[dates.length - 1]].endIndex;
+    
+              // NOTE: in this condition, we're using the endIndex, which *should* be a blank line,
+              // but might not be. If it isn't, it belongs *before* our insertion. Check for it here,
+              // and set dateInsertion.prepend accordingly.
+              const lineAtCursor = clonedLines[dateInsertion.cursor];
+              const lineAboveCursor = clonedLines[dateInsertion.cursor - 1];
+              let startingInsertion;
+              if (/^\s*\r?\n?\s*$/.test(lineAtCursor)) {
+                startingInsertion = lineAtCursor + br;
+                dateInsertion.prepend = br;
+              } else {
+                startingInsertion = br;
+                dateInsertion.prepend = lineAtCursor + br + br;
+              }
+              dateInsertion.mergedLine = joinedDateAndTasks + br + startingInsertion;
+            }
+          }
+          if (_parsley.hasDate(dateAbove) || !dateAbove) {
+            // If dateInsertion has a cursor, it means we've been
+            // collecting dates, and here's where we dump the last set.
+            if (dateInsertion.cursor !== null) {
+              clonedLines[dateInsertion.cursor] = dateInsertion.prepend + dateInsertion.mergedLine;
+    
+              dateInsertion.cursor = null;
+              dateInsertion.mergedLine = '';
+              dateInsertion.prepend = '';
+            }
+          }
+        });
+        return clonedLines.join('');
+    
       }
       function convertScratch(sheet, registry) {
         // Intentionally preserve linebreaks with matchgroup
         const scratchLines = sheet.trim().split(/(\r?\n)/);
         const convertedLines = [];
+        const lastOfType = {};
         for (let i = 0; i < scratchLines.length; i++) {
           const line = scratchLines[i];
           // Convention is to preface an item with "@" when accounted for
           // so break when the first one is found.
           if (line[0] === '@') break;
           Object.keys(registry).some(type => {
-              const { regex, before, after } = registry[type];
-              const normalizedTarget = before ? before(line) : line;
-              if (!regex.test(normalizedTarget)) return false;
-              const convertedLine = registry[type].convert(normalizedTarget);
-              convertedLines.push(convertedLine);
-              // Yes, mutating in place. Get off my lawn!
-              scratchLines[i] = (after) ? after(line, convertedLine) : line;
-              return true;
+            const { regex, before, after, parse } = registry[type];
+            const normalizedTarget = before ? before(line) : line;
+            if (!regex.test(normalizedTarget)) return false;
+            const convertedLine = registry[type].convert(normalizedTarget);
+            // console.log(convertedLine)
+            // console.log(parseTask(convertedLine, -1))
+            lastOfType[type] = convertedLine;
+            convertedLines.push({
+              text: convertedLine,
+              type,
+              ...(parse && {
+                parsed: parse(convertedLine, lastOfType),
+              }),
+            });
+            // Yes, mutating in place. Get off my lawn!
+            scratchLines[i] = (after) ? after(line, convertedLine) : line;
+            return true;
           });
         }
-        // TODO: attach tokenization to lines, for ease of comparison when merging
         return { convertedScratchLines: convertedLines, updatedScratch: scratchLines.join('') };
       }
-    }
+    },
   };
 
   var statsKeys = "year month week tag category subcategory media".split(' ');
@@ -332,13 +529,26 @@ function buildParsleyData(linesOrFile) {
       continue;
     }
     if (isDate(line)) {
+      // Before re-assigning the currentDate (which is a really terrible pattern btw, old self),
+      // set the endBucket for the lastDate for the current index minus one
+      if (currentDate && dateBucket[currentDate]) {
+        dateBucket[currentDate].endIndex = i - 1;
+      }
       currentDate = line;
       // WARNING: there's an assumption built in here that dates will only appear once.
       // Up until now, it hasn't mattered, and the file has never actually been order-dependent, either
       // I definitely need to decide how to deal with that case; I can still only store one index,
       // say, and decide that it'll always be the one at the top, or at the bottom. Or I can
       // store a list of indices and deal with it wherever it's used, just needs to be deliberate.
-      dateBucket[currentDate] = { index: i, tasks: [], next: null, prev: null, utc: Date.parse(line) };
+      dateBucket[currentDate] = { 
+        text: currentDate,
+        index: i, 
+        tasks: [], 
+        next: null, 
+        prev: null, 
+        utc: Date.parse(line), 
+        endIndex: null,
+      };
     } else if (isTask(line)) {
       var task = parseTask(line,i);
       parsley.tasks.push(task);
@@ -403,12 +613,23 @@ function buildParsleyData(linesOrFile) {
   // VITARKA: link up the dateBucket, currently used for sheet merges
   Object.keys(dateBucket)
   .sort((a, b) => b.utc - a.utc)
-  .forEach((date, i, dates)=> 
-    Object.assign(dateBucket[date], {
-      next: dateBucket[dates[i+1]],
-      prev: dateBucket[dates[i-1]],
-    }),
-  );
+  .forEach((date, i, dates) => {
+    // VITARKA: as of now, this is the only place opts.partialOnly is used.
+    // Later, mergeScratch should *definitely* be disabled, just
+    // in case I get boneheaded and try to call it from there.
+    if (!dateBucket[date].endIndex && !opts.partialOnly) {
+      // For the last item, just stick it at the end of the file.
+      // WARNING: Ignores the edge case that there might be a bunch of non-date specific
+      // junk there. The only way to do this fully correctly would involve associating
+      // subsets of line types with their nearest date and checking for those types, 
+      // but YAGNI for now. This whole thing is junk.
+      dateBucket[date].endIndex = parsley.lines.length-1;
+    }
+    return Object.assign(dateBucket[date], {
+      next: dateBucket[dates[i-1]],
+      prev: dateBucket[dates[i+1]],
+    });
+  });
   
   return parsley;
 
@@ -421,7 +642,7 @@ function buildParsleyData(linesOrFile) {
     });
   }
 
-  function parseTask(line,index) {
+  function parseTask(line, index, _currentDate = currentDate) {
     var date,
         time,
         tag,
@@ -441,7 +662,7 @@ function buildParsleyData(linesOrFile) {
     var middle = split.slice((tag?2:1),split.length-1).join(' ').split(':');
     tag = tag || "None";
     //TODO: uh oh... it's splitting the date for every task?!
-    var splitDate = currentDate.split('/'),
+    var splitDate = _currentDate.split('/'),
         year = splitDate[2],
         month = splitDate[0],
         day = splitDate[1];
@@ -478,7 +699,7 @@ function buildParsleyData(linesOrFile) {
       //lineIndex; rename.
       index: index,
       time: time,
-      date: currentDate,
+      date: _currentDate,
       startDate: startDate,
       endDate: endDate,
       baseDate: baseDate,
