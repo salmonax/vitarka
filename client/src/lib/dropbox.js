@@ -54,12 +54,12 @@ function handleTextStream(readableStream, onFirstFunc) {
   return pump();
 }
 
-function streamPomsheet(onFirstFunc) {
+function streamPomsheet(onFirstFunc, filePath = POMSHEET_PATH) {
   return fetchStream('https://content.dropboxapi.com/2/files/download', {
     method: 'POST',
     headers: {
       Authorization: 'Bearer ' + accessToken,
-      "Dropbox-API-Arg": JSON.stringify({ path: pomsheet }),
+      "Dropbox-API-Arg": JSON.stringify({ path: filePath }),
       'Content-Type': 'application/octet-stream',
     }
   }).then(res => {
@@ -71,8 +71,12 @@ window.streamPomsheet = streamPomsheet
 
 const getAccessTokenFromUrl = _ => parseQueryString(window.location.hash).access_token;
 
+// 2020: Dude, get this out of here, what the hell!?
 const POMSHEET_PATH = window.pomsheet = '/apps/vicara/2017 pomodoro.txt';
 const POMSHEET_FOLDER = '/apps/vicara/';
+const SCRATCH_PATH = '/apps/vicara/scratch.txt';
+const SCRATCH_FOLDER = '/apps/vicara/';
+
 
 const $token = {
   load: _ => {
@@ -125,7 +129,7 @@ function downloadAndRead(pomsheetPath, handleResult = oldReadFunc) {
 }
 
 let lastContentHash = null;
-function watchForChanges(path, runner, afterWatchFail) {
+function watchForChanges(path, runner, afterWatchFail, filePath = POMSHEET_PATH) {
   return dropbox.filesListFolder({ path })
   .then(({ cursor }) => { 
     return dropbox.filesListFolderLongpoll({ cursor }) 
@@ -135,21 +139,20 @@ function watchForChanges(path, runner, afterWatchFail) {
       console.log(entries);
       window.entries = entries;
       const { content_hash } = 
-        entries.filter(({ path_lower }) => path_lower === POMSHEET_PATH)[0] || {};
+      entries.filter(({ path_lower }) => path_lower === filePath)[0] || {};
       if (!content_hash) {
-        console.warn('false alarm... not running runner')
+        console.warn('DropboxService.watchForChanges: no content_hash... not running runner')
       } else {
         runner(content_hash); // note: takes no arg because downloadAndRead
       }
-      return watchForChanges(path, runner, afterWatchFail);
+      return watchForChanges(path, runner, afterWatchFail, filePath);
     });
   })
   .catch(err => {
     console.warn('Long poll failed. Waiting for heartbeat and refreshing.' + err);
     return afterWatchFail().then(_ => {
-      console.warn('BACK ONLINE. Restarting watcher');
       runner();
-      return watchForChanges(path, runner, afterWatchFail);
+      return watchForChanges(path, runner, afterWatchFail, filePath);
     });
   });
 }
@@ -197,7 +200,16 @@ function parseQueryString(str) {
 // The callback is for file updates... so.. yeah.
 
 let dropbox, accessToken;
-function handleLogin(onFirstFunc, onCompleteFunc, waitForOnline) {
+/**
+ * Sigh, where do I begin with this stuff...
+ * 1. handleLogin literally calls two proprietary functions that
+ *    only watch the pomodoro sheet? How am I supposed to expect that 
+ *    it's doing so much?
+ * 2. We're *literally* setting observables on the MobX store from here?
+ *    I'm not sure that it's really necessary to keep things that way, 
+ *    but it'd be pretty great to get rid of it *quickly*
+ */
+function handleLogin(onFirstFunc, onCompleteFunc, waitForOnline, onFirstScratchFunc, onCompleteScratchFunc) {
   const clientId = process.env.DROPBOX_CLIENT;
   
   // FUCK, I hate when I code like this!
@@ -212,9 +224,11 @@ function handleLogin(onFirstFunc, onCompleteFunc, waitForOnline) {
   loadOrGenerateUserHash(clientId).then(hash => {
     $syncBus.setUser(hash);
     if (!window.ReadableStream || !window.Symbol) {
-      fetchAndWatchPomsheet(onCompleteFunc, waitForOnline);  
+      fetchAndWatchPomsheet(onCompleteFunc, waitForOnline); 
+      fetchAndWatchScratch(onCompleteScratchFunc, waitForOnline);
     } else {
       streamAndWatchPomsheet(onFirstFunc, onCompleteFunc, waitForOnline);
+      streamAndWatchScratch(onFirstScratchFunc, onCompleteScratchFunc, waitForOnline);
     }
   });  
 }
@@ -233,7 +247,7 @@ function fetchPomsheet(cb) {
   return downloadAndRead(POMSHEET_PATH, cb);
 }
 
-function streamAndRead(onFirstFunc, onCompleteFunc, content_hash) {
+function streamAndRead(onFirstFunc, onCompleteFunc, content_hash, filePath = POMSHEET_PATH) {
   /*
     The fetchStream library seems to swallow the Dropbox headers,
     so this performs a small workaround by retrieving file metadata
@@ -245,11 +259,11 @@ function streamAndRead(onFirstFunc, onCompleteFunc, content_hash) {
         in which case the content_hash is provided by the caller.
 
    */
-  console.log('called streamAndRead', content_hash);
+  console.log('called streamAndRead', content_hash, filePath);
   const hashPromise = content_hash ? 
     Promise.resolve({ content_hash }) : 
-    dropbox.filesGetMetadata({ path: POMSHEET_PATH });
-  return streamPomsheet(onFirstFunc).then(text => {
+    dropbox.filesGetMetadata({ path: filePath });
+  return streamPomsheet(onFirstFunc, filePath).then(text => {
     // onFirstFunc(text);
     return hashPromise.then(({ content_hash }) => {
       const result = { content_hash, file: text };
@@ -269,8 +283,22 @@ function fetchAndWatchPomsheet(cb, afterWatchFail) {
   watchForChanges(POMSHEET_FOLDER, downloadAndRead.bind(null, POMSHEET_PATH, cb), afterWatchFail);
 }
 
-function checkForUpdate(lastHash) {
-  return dropbox.filesGetMetadata({ path: POMSHEET_PATH })
+// Urgh, not DRY; don't care right now
+// TODO: For the love of god, please rewrite all this stuff... it's the worst thing
+// in the entire application!
+function streamAndWatchScratch(onFirstFunc, onCompleteFunc, afterWatchFail) {
+  streamAndRead(onFirstFunc, onCompleteFunc, undefined, SCRATCH_PATH);
+  watchForChanges(SCRATCH_FOLDER, streamAndRead.bind(null, onFirstFunc, onCompleteFunc, undefined, SCRATCH_PATH), afterWatchFail, SCRATCH_PATH);
+}
+
+function fetchAndWatchScratch(cb, afterWatchFail) {
+  downloadAndRead(SCRATCH_PATH, cb);
+  watchForChanges(SCRATCH_FOLDER, downloadAndRead.bind(null, SCRATCH_PATH, cb), afterWatchFail, SCRATCH_PATH);
+}
+
+
+function checkForUpdate(lastHash, filePath = POMSHEET_PATH) {
+  return dropbox.filesGetMetadata({ path: filePath })
      .then(({ content_hash }) => ({ isUpdated: (content_hash !== lastHash), content_hash }));
 }
 

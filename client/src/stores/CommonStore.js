@@ -24,6 +24,11 @@ window.t = TurnipService
  */
 
 export default class Common {
+  pomshetHasLoadedResolve = null;
+  pomsheetHasLoaded = new Promise((r, j) => {
+    this.pomsheetHasLoadedResolve = r;
+  })
+
   @observable example = 'herrow'
   @observable rawPomsheet = 'react has loaded'
   @observable bullshit = ''
@@ -49,12 +54,19 @@ export default class Common {
       // Might want to do a catch condition here
       // No, this thing is fucking horrible.. Goddamnit
       DropboxService.handleLogin(
+        // Do this when the first chunk loads
         this.onFirstPomsheetChunk,
+        // Do this when the whole sheet has loaded... Just an ugly way to make it a Promise
         result => {
           // the strings are just for debugging outputs
           _resolve(this.onPomsheetUpdate(result, 'loginAndParsley'), 'loginAndParsley');
         },
-        _ => this.startNetworkHeartbeat()
+        // Do this when things fail.
+        _ => this.startNetworkHeartbeat(),
+        // Sigh.. just monkeypatching scratch-handling into here
+        this.onFirstScratchChunk,
+        this.onScratchUpdate,
+
       );
     } catch (err) {
       this.rawPomsheet = 'everything fucked up' + err;
@@ -117,9 +129,24 @@ export default class Common {
     this.parsleyData = ParsleyService.buildParsleyData(rawPomsheet);
     this.pomsToday = this.pomsDaysAgo(0);
     this.diegesis = this.getDiegesis();
+    this.pomsheetHasLoadedResolve();
     this.runParsleyCallbacks(this.parsleyData);
-    this.parsleyData.mergeScratch(window.scratch);
+    // this.parsleyData.mergeScratch(window.scratch);
     return this.parsleyData;
+  }
+  get hasPomsheetLoaded() {
+    return !!this._lastPomsheetHash;
+  }
+
+  @action.bound onFirstScratchChunk(text) {
+    // This doesn't do anything yet
+  }
+
+  @action.bound onScratchUpdate(result) {
+    this.pomsheetHasLoaded.then(_ => {
+      const { file } = result;
+      window.wonderful = this.parsleyData.mergeScratch(file);
+    });
   }
 
   // Returns Unix time adjusted for the practical EOD.
