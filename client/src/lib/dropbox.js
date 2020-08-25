@@ -122,7 +122,7 @@ function downloadAndRead(pomsheetPath, handleResult = oldReadFunc) {
     window.res = res
     reader.onloadend = () => {
       // _s.rawPomsheet = 'reader has loaded';
-      handleResult({ file: reader.result, content_hash: res.content_hash });
+      handleResult({ file: reader.result, content_hash: res.content_hash, rev: res.rev });
     } 
     reader.readAsText(res.fileBlob);
   })
@@ -138,12 +138,12 @@ function watchForChanges(path, runner, afterWatchFail, filePath = POMSHEET_PATH)
       const entries = res.entries;
       console.log(entries);
       window.entries = entries;
-      const { content_hash } = 
+      const { content_hash, rev } = 
       entries.filter(({ path_lower }) => path_lower === filePath)[0] || {};
       if (!content_hash) {
         console.warn('DropboxService.watchForChanges: no content_hash... not running runner')
       } else {
-        runner(content_hash); // note: takes no arg because downloadAndRead
+        runner({ content_hash, rev });
       }
       return watchForChanges(path, runner, afterWatchFail, filePath);
     });
@@ -247,7 +247,7 @@ function fetchPomsheet(cb) {
   return downloadAndRead(POMSHEET_PATH, cb);
 }
 
-function streamAndRead(onFirstFunc, onCompleteFunc, content_hash, filePath = POMSHEET_PATH) {
+function streamAndRead(onFirstFunc, onCompleteFunc, metadata, filePath = POMSHEET_PATH) {
   /*
     The fetchStream library seems to swallow the Dropbox headers,
     so this performs a small workaround by retrieving file metadata
@@ -259,14 +259,14 @@ function streamAndRead(onFirstFunc, onCompleteFunc, content_hash, filePath = POM
         in which case the content_hash is provided by the caller.
 
    */
-  console.log('called streamAndRead', content_hash, filePath);
-  const hashPromise = content_hash ? 
-    Promise.resolve({ content_hash }) : 
+  console.log('called streamAndRead', metadata, filePath);
+  const hashPromise = metadata ? 
+    Promise.resolve({ content_hash: metadata.content_hash, rev: metadata.rev }) : 
     dropbox.filesGetMetadata({ path: filePath });
   return streamPomsheet(onFirstFunc, filePath).then(text => {
     // onFirstFunc(text);
-    return hashPromise.then(({ content_hash }) => {
-      const result = { content_hash, file: text };
+    return hashPromise.then(({ content_hash, rev }) => {
+      const result = { content_hash, rev, file: text };
       onCompleteFunc(result);
       return result;
     });
@@ -302,4 +302,11 @@ function checkForUpdate(lastHash, filePath = POMSHEET_PATH) {
      .then(({ content_hash }) => ({ isUpdated: (content_hash !== lastHash), content_hash }));
 }
 
-export default { handleLogin, fetchPomsheet, fetchAndWatchPomsheet, checkForUpdate, streamPomsheet, $syncBus }
+export default { 
+  handleLogin, 
+  fetchPomsheet, 
+  fetchAndWatchPomsheet, 
+  checkForUpdate, 
+  streamPomsheet,
+  $syncBus,
+}
