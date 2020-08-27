@@ -176,26 +176,29 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
      * which will help with changing the case for lazily-entered book aliases.
      * 
      * It converts from a shorter format that I use on my phone. It should:
-     *  1. Take the scratch sheet and a callback
+     *  1. Take the scratch sheet and an optional parsley object.
      *  2. Convert it to standard format, with appropriate width and tabbing. 
      *  3. For descriptions that were truncated, add an indented comment 
      *     with the rest of the description right below it.
      *  3. Merge the converted scratch sheet into a pomsheet string, but
      *     without of course changing our closured parsley instance.
-     *  4. Invoke the callback, which will take as parameters two strings:
-     *    a. The merged version of the pomsheet we just made
-     *    b. An updated scratch sheet, with the processed dates prefixed with "@",
-     *      the termination marker
+     *  4. Return the following:
+     *      a. The merged version of the pomsheet we just made
+     *      b. An updated scratch sheet, with the processed dates prefixed with "@",
+     *        the termination marker
      * 
-     * NOTE: In Vitarka, the intention is that the caller will use the callback 
-     * to write both to the scratch sheet AND to the pomsheet. It could cause
-     * an infinite loading loop if it doesn't make sure to avoid writing when
-     * it doesn't need to.
-     * 
-     * UPDATE: CPS is stupid unless this is async, which it isn't, so no longer
-     * taking a callback
+     * NOTE: In Vitarka, the intention is that the caller will use the output 
+     * to write both to the scratch sheet AND to the pomsheet.
     **/
     mergeScratch(sheet, _parsley = parsley) {
+      // These constants are currently used in typeRegistry.task.convert
+      // for splitting overlong lines. We're collecting them here
+      // for visibility.
+      const CONSTANTS = {
+        maxLineLength: 80,
+        maxBodyLength: 79,
+        tabLength: 8,
+      };
       const typeRegistry = {
         date: {
           regex: /^(\d\d?)\/(\d\d?)\/?(\d?\d?\d?\d?)\s*$/,
@@ -211,7 +214,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
             // the adjustedDateString won't be be marked. It's expected
             // behavior, but the subjective experience will be that it's
             // annoyingly refusing to mark both today's AND yesterday's date
-            // in certain cases
+            // in certain (very rare) cases
             //
             // TODO: once adjustedUTC has taken the latest pomsheet date into account,
             // make sure to also "phone home" when/if the scratch sheet has a higher
@@ -238,10 +241,10 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
               (_, time, title, progress, description, poms) => {
                 title = _matchCaseToMedia(title, _parsley.media) || title;
                 // Magic number, what I'm using on my pomsheet
-                const maxLineLength = 80;
+                const maxLineLength = CONSTANTS.maxLineLength;
                 // Likewise, used to split descriptions into multiple lines
-                const maxBodyLength = 79;
-                const tabLength = 8; // for clarity, below
+                const maxBodyLength = CONSTANTS.maxBodyLength;
+                const tabLength = CONSTANTS.tabLength; // for clarity, below
     
                 const body = `Read: ${title} -> ${progress}, ${description}`;
                 let bodyLineOne, bodyLineTwo;
@@ -278,7 +281,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
         updatedScratch,
       };
     
-      function buildMergedPomsheet(scratchData, _parsley = parsley) {
+      function buildMergedPomsheet(scratchData) {
         const clonedLines = _parsley.lines.slice()//(0, 540); // expand to test case until this is done
     
         const { dateBucket, linebreak: br } = _parsley;
@@ -293,7 +296,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
          * 3. If it's the last item, use the current date's endIndex
          */
         // Annoyingly, legacy parsley doesn't provide metadata, so do it here
-        const toWrapped = task => ({ parsed: task, type: 'task', text: _parsley.lines[task.index] });
+        const toWrapped = task => ({ text: _parsley.lines[task.index], type: 'task', parsed: task });
         scratchData.forEach(line => {
           if (line.type === 'task') {
             const taskDate = line.parsed.date;
@@ -308,7 +311,46 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
         });
         // Now reverse sort all of these for merge
         Object.keys(mergedScratchDateBucket).forEach(date => {
-          mergedScratchDateBucket[date].tasks.sort((a, b) => +b.parsed.time - +a.parsed.time);
+          mergedScratchDateBucket[date].tasks =
+            mergedScratchDateBucket[date].tasks
+              .sort((a, b) => +b.parsed.time - +a.parsed.time)
+              // Prevent duplicates here. If everything else is working correctly,
+              // it's only strictly required for the current day (which is never marked 
+              // "read" until the following day) but running it indiscriminately
+              // will also avoid a bad writes in conditions where the pomodoro sheet has been 
+              // correctly written but the scratch sheet was either overwritten by the user
+              // with unmarked dates or otherwise failed to write.
+              .filter(({ text, parsed }, i, a) => {
+                if (parsed.index !== -1) return true; // let all non-scratch entries through
+                const prev = a[i - 1];
+                const next = a[i + 1];
+                // Do two types of dup check: 
+                // 1. Check for same media title and progress, regardless of description;
+                // As a pomsheet user, it's pretty common to completely rephrase descriptions, 
+                // so this is more permissive and robust than a text check.
+                if (parsed.media) {
+                  const isSameMediaEntry = other =>
+                    other && other.parsed.media &&
+                    other.parsed.media === parsed.media &&
+                    other.parsed.progress === parsed.progress;
+                  if (isSameMediaEntry(prev)) return false;
+                  if (isSameMediaEntry(next)) return false;
+                  return true;
+                }
+                // 2. Do a fallback check, which relies on the line text:
+                const truncText = text.split(br)[0]; // only take first half of multiline entries
+                // WARNING: the behavior below depends on toWrapped.
+                // If we later add a line wrapper to Parsley that concatenates 
+                // a full description, make sure to only grab the first line.
+                if (prev && truncText === prev.text) return false;
+                if (next && truncText === next.text) return false;
+                return true;
+                
+                // 3. Some looser heuristics could be added (eg. time + topic + number of poms)
+                // (The reason for all this is to prevent overwriting an item just because it
+                // has the same timestamp; they're arbitrarily rounded up or down by the user, so
+                // timestamps will sometimes overlap.
+              });
         });
     
         // WARNING: this is an awful way to do this; we shouldn't need to re-parse the dates.
@@ -318,7 +360,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
             .concat(Object.keys(mergedScratchDateBucket))
             .filter((n, i, a) => a.indexOf(n) === i)
             .map(text => ({ type: 'date', parsed: Date.parse(text), text }))
-            .sort((a, b) => a.parsed - b.parsed)
+            .sort((a, b) => a.parsed - b.parsed);
     
         let dateInsertion = {
           cursor: null,
