@@ -24,13 +24,19 @@ window.t = TurnipService
  */
 
 export default class Common {
-  pomshetHasLoadedResolve = null;
+  pomsheetHasLoadedResolve = null;
   pomsheetHasLoaded = new Promise((r, j) => {
     this.pomsheetHasLoadedResolve = r;
   })
+  scratchHasLoadedResolve = null;
+  scratchHasLoaded = new Promise((r, j) => {
+    this.scratchHasLoadedResolve = r;
+  });
+  lastPomsheetResult = {};
 
   @observable example = 'herrow'
   @observable rawPomsheet = 'react has loaded'
+  @observable rawScratch = ''
   @observable bullshit = ''
   @observable.shallow parsleyData
   @observable pomsToday = ''
@@ -120,13 +126,33 @@ export default class Common {
   // These functions are misnamed; this should be "receivedPomsheet" as
   // it doesn't actually take any sort of callback.
   // It's called in several contexts, but always when the pomsheet is done loading.
-  @action.bound onPomsheetUpdate(result, caller) {
+  @action.bound onPomsheetUpdate(result = this.lastPomsheetResult, caller) {
+    // 2020: Sigh, tech debt; this makes rawPomsheet and _lastPomsheetHash redundant
+    this.lastPomsheetResult = result;
+
     console.warn('Caller: ' + caller);
-    const rawPomsheet = result.file; // should be result.text
     console.log('updating pomsheet');
-    this.rawPomsheet = rawPomsheet;
+    if (this.hasPomsheetLoadedOnce && this.rawScratch) {
+      // On any subsequent pomsheet loads where the scratch sheet has already loaded,
+      // build parsleyData out of a merged sheet rather than the raw data
+      const { rawScratch, parsleyData } = this;
+      const { updatedPomsheet } = parsleyData.mergeScratch(
+        rawScratch,
+        // always merge into an unmerged parsleyData object:
+        ParsleyService.buildParsleyData(result.file),
+      );
+      // TODO: mergeScratch should probably look more look like this:
+      //const { updatedPomsheet } = ParsleyService.mergeScratch(rawScratch, parsleyData);
+      this.rawPomsheet = updatedPomsheet;
+      this.parsleyData =  ParsleyService.buildParsleyData(updatedPomsheet);
+      
+    } else {
+      const rawPomsheet = result.file; // should maybe be result.text
+      this.rawPomsheet = rawPomsheet;
+      this.parsleyData = ParsleyService.buildParsleyData(rawPomsheet);
+    }
+
     this._lastPomsheetHash = result.content_hash;
-    this.parsleyData = ParsleyService.buildParsleyData(rawPomsheet);
     this.pomsToday = this.pomsDaysAgo(0);
     this.diegesis = this.getDiegesis();
     this.pomsheetHasLoadedResolve();
@@ -134,7 +160,7 @@ export default class Common {
     // this.parsleyData.mergeScratch(window.scratch);
     return this.parsleyData;
   }
-  get hasPomsheetLoaded() {
+  get hasPomsheetLoadedOnce() {
     return !!this._lastPomsheetHash;
   }
 
@@ -143,10 +169,8 @@ export default class Common {
   }
 
   @action.bound onScratchUpdate(result) {
-    this.pomsheetHasLoaded.then(_ => {
-      const { file } = result;
-      window.wonderful = this.parsleyData.mergeScratch(file);
-    });
+    this.rawScratch = result.file;
+    this.pomsheetHasLoaded.then(_ => this.onPomsheetUpdate());
   }
 
   // Returns Unix time adjusted for the practical EOD.
