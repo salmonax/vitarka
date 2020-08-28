@@ -325,13 +325,14 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
                 const prev = a[i - 1];
                 const next = a[i + 1];
                 // Do two types of dup check: 
-                // 1. Check for same media title and progress, regardless of description;
+                // 1. Check for same media title, time, and progress, regardless of description;
                 // As a pomsheet user, it's pretty common to completely rephrase descriptions, 
                 // so this is more permissive and robust than a text check.
                 if (parsed.media) {
                   const isSameMediaEntry = other =>
                     other && other.parsed.media &&
                     other.parsed.media === parsed.media &&
+                    other.parsed.time === parsed.time &&
                     other.parsed.progress === parsed.progress;
                   if (isSameMediaEntry(prev)) return false;
                   if (isSameMediaEntry(next)) return false;
