@@ -375,13 +375,13 @@ var calendarView = function() {
         fullYear = !!(lastQuery.fullYear || fullYear);
         propToShow = lastQuery.propToShow || propToShow; 
       }
+      fullYear = fullYear || null;
+      propToShow = propToShow || "category";
       qp.set({ 
         startDate,
         fullYear,
         propToShow,
       });
-      fullYear = fullYear || false;
-      propToShow = propToShow || "category";
       // p(startDate);
       benchStart = new Date().getTime();
       $("#cal-body").empty();
