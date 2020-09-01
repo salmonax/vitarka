@@ -202,16 +202,31 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       const typeRegistry = {
         date: {
           regex: /^(\d\d?)\/(\d\d?)\/?(\d?\d?\d?\d?)\s*$/,
-          convert(line) {
+          // WARNING: this "before" is ONLY for live merging, which 
+          // needs to be able to merge the entire scratch file. I went
+          // through various ways to mark dates "read" over the years,
+          // and this will clean them out.
+          before(line) {
+            // There are strange things amiss in the scratch file (mine),
+            // with both @ and # used in both prefix and postfix to denote
+            // a date as "read". This cleans it up.
+            if (!line) return line;
+            const normalized = line.split(/(?:@+|#+)/).filter(n => n)[0];
+            return normalized.trim();
+            // return line.replace(/@/g,'');
+          },
+          convert(line, linebreak = '\n', acc = { yearOffset: 1 }) {
             return line.replace(
               this.regex,
               // Add current year if not included
-              '$1/$2/' + (RegExp.$3 ? '$3' : (new Date()).getFullYear()),
+              // NOTE: the stats object is a kludge; many dates in the scratch sheet
+              // fail to specify a date, so this is an ad-hoc way to push them down.
+              '$1/$2/' + (RegExp.$3 ? '$3' : (new Date()).getFullYear() - acc.yearOffset + 1),
             );
           },
           after(originalLine, convertedDateString) {
-            // WARNING: there's an edge case where a date larger than
-            // the adjustedDateString won't be be marked. It's expected
+            // WARNING: for marking things read, there's an edge case where a date
+            // larger than the adjustedDateString won't be be marked. It's expected
             // behavior, but the subjective experience will be that it's
             // annoyingly refusing to mark both today's AND yesterday's date
             // in certain (very rare) cases
@@ -332,7 +347,9 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
                   const isSameMediaEntry = other =>
                     other && other.parsed.media &&
                     other.parsed.media === parsed.media &&
-                    other.parsed.time === parsed.time &&
+                    // for live-merge, ignore the time; sometimes it will
+                    // be jiggered by hand to prevent overlaps after a manual merge
+                    //other.parsed.time === parsed.time && 
                     other.parsed.progress === parsed.progress;
                   if (isSameMediaEntry(prev)) return false;
                   if (isSameMediaEntry(next)) return false;
@@ -508,18 +525,50 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
         const scratchLines = sheet.trim().split(/(\r?\n)/);
         const convertedLines = [];
         const lastOfType = {};
+
+        // WARNING: these are here as a typeRegistry.date kludge and should be refactored out 
+        const accumulatorBucket = {};
+        // Some dates in the scratch file DO have a year on them; strip it so that the basis
+        // for comparing dates is always the same
+        const noYear = string => string.split(/\/\d{4}$/)[0];
+
         for (let i = 0; i < scratchLines.length; i++) {
           const line = scratchLines[i];
+
           // Convention is to preface an item with "@" when accounted for
           // so break when the first one is found.
-          if (line[0] === '@') break;
+          // When not live-merging, uncomment the following:
+          // if (line[0] === '@') break;
+ 
+
+          // My scratch file morphs into various previous formats, the oldest
+          // transition of which is marked as the following, after which
+          // the dates change order; break here
+          if (line.includes('-- old --')) break;
+
           Object.keys(registry).some(type => {
             const { regex, before, after, parse } = registry[type];
             const normalizedTarget = before ? before(line) : line;
             if (!regex.test(normalizedTarget)) return false;
-            const convertedLine = registry[type].convert(normalizedTarget);
-            // console.log(convertedLine)
-            // console.log(parseTask(convertedLine, -1))
+
+            // FATAL: Degenerate anti-pattern, but lets the convert function take
+            // an accumulator as a parameter
+            // TODO: incorporate this into typeRegistry, cleanly!
+            let accumulator;
+            if (type === 'date') {
+              const convertAhead = registry[type].convert(normalizedTarget);
+              if (!accumulatorBucket[type]) {
+                accumulatorBucket[type] = 1;
+              }
+              // Assume descending order; if a date doesn't descend, it probably means it's in the previous year
+              if (lastOfType[type] && Date.parse(noYear(lastOfType[type])) < Date.parse(noYear(convertAhead))) {
+                accumulatorBucket[type] += 1;
+                //console.error('OH SHIT WE FOUND A BLIP', noYear(lastOfType[type]), 'less than', noYear(convertAhead))
+              }
+              accumulator = { yearOffset: accumulatorBucket[type] };
+            }
+            const convertedLine = registry[type].convert(normalizedTarget, undefined, accumulator);
+
             lastOfType[type] = convertedLine;
             convertedLines.push({
               text: convertedLine,
