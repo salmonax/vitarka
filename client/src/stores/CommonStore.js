@@ -109,7 +109,11 @@ export default class Common {
         // return DropboxService.fetchPomsheet(this.onPomsheetUpdate);
       }
       this.updatedOnFocus = false
-      console.warn('Pomsheet checked, but no change; skipping.');
+      console.warn('Pomsheet checked, but no change; skipping, but calling onPomsheetUpdate anyway.');
+      // WARNING: TEMPORARY KLUDGE
+      // Run onPomsheetUpdate anyway to force a re-merge with scratch on focus.
+      this.onPomsheetUpdate();
+
     });
   }
 
@@ -169,6 +173,7 @@ export default class Common {
   }
 
   @action.bound onScratchUpdate(result) {
+    console.warn('##### SCRATCH UPDATE DETECTED. WILL CALL ONPOMSHEETUPDATE() ####');
     this.rawScratch = result.file;
     this.pomsheetHasLoaded.then(_ => this.onPomsheetUpdate());
   }
