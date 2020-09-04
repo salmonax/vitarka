@@ -15,6 +15,8 @@ import md5 from 'js-md5';
 window.md5 = md5;
 window.fetchStream = fetchStream;
 
+const CLIENT_ID = process.env.DROPBOX_CLIENT;
+
 /*
   "callbacks" is POJO with the following keys:
       first: func for the first chunk
@@ -210,7 +212,7 @@ let dropbox, accessToken;
  *    but it'd be pretty great to get rid of it *quickly*
  */
 function handleLogin(onFirstFunc, onCompleteFunc, waitForOnline, onFirstScratchFunc, onCompleteScratchFunc) {
-  const clientId = process.env.DROPBOX_CLIENT;
+  const clientId = CLIENT_ID;
   
   // FUCK, I hate when I code like this!
   _s.rawPomsheet = 'In handleLong(); about to check for access token';
@@ -233,7 +235,7 @@ function handleLogin(onFirstFunc, onCompleteFunc, waitForOnline, onFirstScratchF
   });  
 }
 
-function loadOrGenerateUserHash(clientId = process.env.DROPBOX_CLIENT) {
+function loadOrGenerateUserHash(clientId = CLIENT_ID) {
   const userHash = window.localStorage.getItem('__bindu__');
   if (userHash) return Promise.resolve(userHash);
   return dropbox.usersGetCurrentAccount().then(result => {

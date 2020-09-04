@@ -1,0 +1,6 @@
+# Procure the following and copy to /.env
+PN_PUB=<pubnub publishing  key>
+PN_SUB=<pubnub subscription key>
+DROPBOX_CLIENT=<dropbox client id>
+RESPONSIVE_VOICE=<resonsive voice id>
+GOOGLE_BOOKS=<Google Books API key>

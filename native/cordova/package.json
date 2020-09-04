@@ -13,7 +13,9 @@
     "adb-install": "adb -s 192.168.0.100:5555 install -r $PWD/platforms/android/app/build/outputs/apk/debug/app-debug.apk",
     "adb-launch": "adb -s 192.168.0.100:5555 shell monkey -p com.mobile.vitarka -c android.intent.category.LAUNCHER 1",
     "osa-notify": "osascript -e 'display notification \"App Reinstalled\" with title \"Cordova\" sound name \"Submarine\"'",
-    "adb-connect": "adb connect 192.168.0.100:5555"
+    "adb-connect": "adb connect 192.168.0.100:5555",
+    "_init-troublesome-plugins": "cordova plugin add git+https://github.com/floatinghotpot/cordova-httpd.git git+https://github.com/boltex/cordova-plugin-powermanagement.git git+https://github.com/46cl/cordova-android-focus-plugin.git",
+    "init": "npm run _init-troublesome-plugins && cordova platform add android"
   },
   "keywords": [
     "ecosystem:cordova"

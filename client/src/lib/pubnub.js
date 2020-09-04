@@ -1,7 +1,7 @@
 const PubNub = window.PubNub; // Sorry everybody! 
 
 const publishKey = process.env.PN_PUB;
-const subscribeKey =  process.env.PN_SUB;
+const subscribeKey = process.env.PN_SUB;
 
 const client = new PubNub({
   publishKey,

@@ -1,4 +1,4 @@
-native/cordova/platforms/android
+native/cordova/platforms
 native/cordova/www/webpack
 **/.DS_Store
 # Build Artifacts

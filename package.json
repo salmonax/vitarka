@@ -8,6 +8,7 @@
     "move202": "mv client/dist/index.html client/dist/200.html",
     "deploy": "npm run build && npm run move202 && surge client/dist https://vitarka.surge.sh",
     "build": "rm -rf client/dist && cross-env ENV=PRODUCTION webpack-cli",
+    "init:droid": "cd native/cordova && npm run init && cd -",
     "build:droid": "npm run droid-devserver-off && npm run _build:droid",
     "build:droid:live": "npm run droid-devserver-on && npm run _build:droid",
     "_build:droid": "rm -rf native/cordova/www/webpack && cross-env ENV=PRODUCTION PLATFORM=DROID webpack-cli && npm run push:droid",
@@ -25,9 +26,13 @@
     "droid-devserver-on": "echo \"DEBUG = { devServerURL: 'https://192.168.0.106:3000/' }\" > native/cordova/www/_debug.js",
     "droid-devserver-off": "echo \"\" > native/cordova/www/_debug.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/salmonax/vitarka.git"
+  },
   "keywords": [],
   "author": "George A. Michel",
-  "license": "GPLv2 or later",
+  "license": "GPL-2.0-or-later",
   "dependencies": {
     "axios": "^0.18.0",
     "concurrently": "^3.5.1",

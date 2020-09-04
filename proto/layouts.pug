@@ -15,7 +15,7 @@ head
       -webkit-transition: .2s;
       transition: opacity .2s;
     }
-    
+
     .slider:hover {
       opacity: 1;
     }
@@ -40,7 +40,7 @@ head
     input.done:focus {
       outline: none
     }
-    
+
     .slider::-webkit-slider-thumb {
       border: 1px solid #fff9;
       -webkit-appearance: none;
@@ -164,14 +164,14 @@ head
     br.dx { line-height: 2em; }
 body
   .container
-    
+
     .flexer
       .screen.main
         h3.center Main
         p.center A2.M3.W3 : S2.1.B2
         br
         p Poms Done Today: 8
-        p Saturation: 10:00 
+        p Saturation: 10:00
         p Blocks: 20: 25 30 35
         br
         h5 Active Topics
@@ -182,9 +182,9 @@ body
         p Sprint Planning
         br
         h5 Active Book
-        p Pro TypeScript
+        p Elixir in Action
         p Effective TypeScript
-        p On Anarchism
+        p Absence of Myth
         p SitAnth
         .flex-layer
           .rows
@@ -207,7 +207,7 @@ body
         p.s 6-16% on exclusion, 4th conference, insurrection
         p.s 16-17%, Vaneigem polemics on everyday life, delivered on tape
         .flex-layer
-          .rows 
+          .rows
             h2 1 2 3 4
           .rows
             h2 Start
@@ -225,20 +225,20 @@ body
         p.s goofily make a draggable element (2)
         p.s do "passive loop" from design diagram in basic list
         p.s keep attending design; add other views, flex elements
-        p.s fill in start from book, set weights, running books 
+        p.s fill in start from book, set weights, running books
         .flex-layer
-          .rows 
+          .rows
             h2 1 2 3 4
           .rows
             h2 Start
       .screen.set-weights
         h3.center Set Weights
         h4 Books
-        p Pro TypeScript
+        p Elixir in Action
         input.slider(type="range" min="0" max="4")
         p Effective TypeScript
         input.slider(type="range" min="0" max="4")
-        p On Anarchism
+        p Absence of Myth
         input.slider(type="range" min="0" max="4")
         h4 Topics
         p Code
@@ -252,7 +252,7 @@ body
       mixin timer-progress
         .flex-layer
           h1.center 23:43:12
-          h2.center - 4 + 
+          h2.center - 4 +
           br.dx
           .rows
             h3 Break
@@ -281,7 +281,7 @@ body
         p Pause Time: 5:20
         +timer-progress
       mixin setting(label)
-        .rows.wide 
+        .rows.wide
           p= label
           p On/Off
       mixin notifications
@@ -296,7 +296,7 @@ body
           +notifications
         h5 Mobile
           +notifications
-        h5 Browser 
+        h5 Browser
           +notifications
         h4 Misc
           +setting('Allow Pauses')
@@ -331,7 +331,7 @@ body
           .kb-droid
       .screen.complete.topic
         h3.center Topic Complete
-        
+
 
   script.
     const $ = document.querySelector.bind(document);
@@ -367,7 +367,7 @@ body
       const sameX =  x === parseInt(d.dragging.style.left);
       const sameY =  y === parseInt(d.dragging.style.top);
       if (sameX && sameY) return;
-      
+
       Object.assign(d.dragging.style, {
         left: x,
         top: y,
