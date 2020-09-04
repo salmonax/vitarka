@@ -33,7 +33,6 @@ const NotificationSettings = props => pug`
 @withRouter @inject('common') @observer
 export default class Main extends Component {
   @observable path = 'main'
-  @observable state
 
   @observable books = `
     Pro TypeScript
@@ -58,7 +57,17 @@ export default class Main extends Component {
     path = path.substr(1);
     if (!this[path]) path = 'main';
     this.path = path;
-    this.state = state;
+    if (state) {
+      this.setState({
+        ...state,
+      });
+    }
+  }
+
+  constructor() {
+    super();
+    this.state = {};
+
   }
 
   componentDidMount() {
@@ -86,7 +95,7 @@ export default class Main extends Component {
   }
 
   @computed get activeBooks() {
-    return this.props.common.booksByLastRead.slice(0, 10).map(n => n.title);
+    return this.props.common.booksByLastRead.slice(0, 16).map(n => n.title);
   }
 
   get main() {
@@ -95,10 +104,10 @@ export default class Main extends Component {
       .screen
         h1.center Main
         p.center ${this.diegesisTitle} 
+        p.center ${this.blocksInScratchNotation}
         br
         p Poms Done Today: ${common.pomsToday}
         p Saturation: <WIP>
-        p Blocks: ${this.blocksInScratchNotation}
         br
         h3 Active Topics
         h4 <WIP>
@@ -112,7 +121,7 @@ export default class Main extends Component {
         each book in this.activeBooks
           h4(
             key=book
-            onClick=${e => this.navTo('/book_start', { book })}
+            onClick=${e => this.navTo(`/book_start`, { book })}
           )= book
         .flex-layer
           .rows
@@ -122,6 +131,7 @@ export default class Main extends Component {
   }
 
   get book_start() {
+    console.log(this, this.state)
     return pug`
       .screen.start.book
         h1.center Start from Book
