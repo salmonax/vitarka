@@ -16,7 +16,7 @@ I originally wanted to call it Vicara, but apparently that name's a bit more pop
 
 Anyhow, here's how I currently use it:
 
-1\. I keep a text file sheet in Dropbox on one of my workspaces, and a lazier version of it on my phone. It uses a pretty simple format, like so: 
+1\. I keep a text file sheet in Dropbox on one of my workspaces, and a lazier version of it on my phone. It uses a pretty simple format, like so:
 
 ```
 5/21/20XX
@@ -27,7 +27,6 @@ Anyhow, here's how I currently use it:
 3.5 &DD Virtualization: get VMware running Windows 7, troubleshoot lack of 3D support  X
 4 &DD Virtualization: noodle through driver issues, add PPA's and try to install drivers X
 5 &DD! Virtualization: enable SNA, abandon VMware, test Space Shooter in Chrome, better! X
- 
 ```
 (See the [pom-parsley](https://github.com/salmonax/pom-parsley) repo for more details about the syntax.)
 
@@ -59,7 +58,7 @@ It can also show the fitful flailing of my sometimes-awful reading habits over t
 ![Fitful Flailing](https://user-images.githubusercontent.com/2810775/92298148-d1f5c100-eefa-11ea-9b65-f3e448d1c361.png)
 
 
-4\. The mobile app is configured to make Casio-like beeps every hour, counting down from 5 at the top of a 5-hour block down to one. This keeps me minimalistically aware of where I am in the day. The Cordova app works in the background, though not yet by particularly battery-efficient means. Apart from that, it's in a very early state, with a set of Minimnum Usable Tool screens in the /proto folder, of which a few are implemented:
+4\. The mobile app is configured to make Casio-like beeps every hour, counting down from 5 at the top of a 5-hour block down to one. This keeps me minimalistically aware of where I am in the day. The Cordova app works in the background, though not yet by particularly battery-efficient means. Apart from that, it's in a very early state, with a set of "minimum usable tool" screens in the /proto folder, of which a few are implemented:
 
 ![Mobile Flow](https://user-images.githubusercontent.com/2810775/92298371-d7540b00-eefc-11ea-85ef-896819711da7.png)
 
@@ -71,7 +70,7 @@ The classic Pomodoro Technique involves 25 minute timers with five minute breaks
 In practice, I now tend to read in 50 minute sets and program in 100 minute sets, and I design the full day around
 6-9 hours of focused activity, with constrained but highly variable break-management. A two-hour set gets its own "local" break-pool, and the entire day gets a "global" break-pool. The idea is less about enforcing *regular* breaks than about establishing the right amount of slack to increase focusing stamina; I'm both motivated by challenging material and super fidgety, so it's designed to reign in that kind of temperament.
 
-For example: a long study day of 16 poms might last 9 hours. I'll divide this into 4 "quadropom" sessions, with 144 minutes of on-task time (for reading, I pad my poms with an extra minute, just because), and 15 minutes of break time per session. The global pool gets 50 minutes. 
+For example: a long study day of 16 poms might last 9 hours. I'll divide this into 4 "quadropom" sessions, with 144 minutes of on-task time (for reading, I pad my poms with an extra minute, just because), and 15 minutes of break time per session. The global pool gets 50 minutes.
 
 At the end of the session, I give myself as much of the global time as I want or need. I'll also change up the day-design; for example, I might go for 12 poms of coding in 8 hours, which gives me enough time to interleave an hour of another activity, or just goof around.
 
@@ -79,11 +78,11 @@ What you end up with is two levels of semi-off-the-clock commitment, which reign
 
 ## Why Turnip?
 
-The name "turnip" comes from a widget I sometimes use to pace myself through National Novel Writing Month. For some reason, the act of grilling down on something as stressful as non-stop writing made me think of pulling up turnips out of the ground in Mario 2. 
+The name "turnip" comes from a widget I sometimes use to pace myself through National Novel Writing Month. For some reason, the act of grilling down on something as stressful as non-stop writing made me think of pulling up turnips out of the ground in Mario 2.
 
-To make the widget, I simply figured out how fast I could write a given story (for me, 10wpm-35wpm, depending on the difficulty of the story, or 2-4 poms per day). Then, I'd keep a counter that told me how many poms worth of work I needed to get done in order to be caught up. I normally just use a spreadsheet, but the concept is sketched out a bit in src/client/lib/turnip.js. 
+To make the widget, I simply figured out how fast I could write a given story (for me, 10wpm-35wpm, depending on the difficulty of the story, or 2-4 poms per day). Then, I'd keep a counter that told me how many poms worth of work I needed to get done in order to be caught up. I normally just use a spreadsheet, but the concept is sketched out a bit in src/client/lib/turnip.js.
 
-The reason it worked was that I never worried about my wordcount or clung to a burndown chart; all I cared about was the number. Instead of forcing myself to write every day, I'd simply wait for that number to get so mammoth that I'd completely freak out and start writing until it was back within normal bounds. In other words, it functioned as a kind of homeostat. 
+The reason it worked was that I never worried about my wordcount or clung to a burndown chart; all I cared about was the number. Instead of forcing myself to write every day, I'd simply wait for that number to get so mammoth that I'd completely freak out and start writing until it was back within normal bounds. In other words, it functioned as a kind of homeostat.
 
 Essentially, I see where this is going as a generalization of that technique.
 
@@ -93,7 +92,7 @@ To initiate the app:
 
 ```
 npm install
-npm init:droid 
+npm init:droid
 ```
 
 To run different pieces of it:
@@ -133,17 +132,17 @@ As for how the others are used: Pubnub is used to sync the ubiquitous timer acro
 
 ## Architecture
 
-This is a React app bundled with Webpack, using MobX for state management and pug templates for easy legibility and quick prototyping. However, as the priority has been experimentation, the MobX stores haven't yet been decomposed, and there's been no separation between UI and domain stores (with the former typically fused to individual components and the latter in a monolithic controller-esque CommonStore that depends on a few utility services). It's not *quite* a bit ball of mud, but it basically is. The dependency graph looks like this:
+This is a React app bundled with Webpack, using MobX for state management and pug templates for easy legibility and quick prototyping. However, as the priority has been experimentation, the MobX stores haven't yet been decomposed, and there's been no separation between UI and domain stores (with the former typically fused to individual components and the latter in a monolithic controller-esque CommonStore that depends on a few utility services). It's not *quite* a big ball of mud, but it basically is. The dependency graph looks like this:
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/2810775/92302463-33308b00-ef21-11ea-83c6-9aceb31292ff.png">
 </p>
 
-So, there might be hope, provided that each "unseparated concerns" are extracted and polished. I probably won't rewrite it until a good chunk of the UX is done, at least in a bare state. 
+So there might be hope, provided that each unseparated concern is extracted and polished. I probably won't rewrite it until a good chunk of the UX is done, at least in a minimal state.
 
 ## Contributing
 
-For now, if this seems interesting (and you happen to be pretty patient), contact me at george@nomadscience.org and we might be able to collab on making it more contrib-ready. If you're working on or have concocted something similar, I'd also love to exchange ideas.
+For now, if this seems interesting (and you happen to be outrageously patient), contact me at george@nomadscience.org and we might be able to collab on making it more contrib-ready. I'd also love to exchange ideas if you've concocted a similar system,
 
 ## License
 

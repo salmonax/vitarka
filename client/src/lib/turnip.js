@@ -161,7 +161,7 @@ function _allocateTriplet(target, favorIndex, maxValue, maxErrorMsg) {
       if (remainder === 1) {
           output[favorIndex]++;
       } else {
-        while(remainder) output[--remainder]++;
+        while(remainder && remainder >= 0) output[--remainder]++;
       }
     }
     return output;
