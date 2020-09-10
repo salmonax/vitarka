@@ -244,7 +244,21 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
           }
         },
         task: {
-          regex: /^(\d\d?\.?5?)\s*([\w\s]+),\s*(\d+?%?\/?\d*),\s*(.+)\s+([xX]*)$/,
+          regex: () => {
+            // Allow two different types of task from the scratch sheet:
+            // 1. Books with the topic ellided
+            // 2. A line with a topic that already exists in the main sheet
+            const existingTopics =
+                '(' + Object.keys(_s.parsleyData.stats.category)
+                    .map(n => n.replace(/[^A-Za-z]\s?/g,'').toLowerCase())
+                    .join('|') +
+                 ')';
+            const taskRegex =
+                String.raw`^(\d\d?\.?5?)\s*(?:` +
+                existingTopics +
+                String.raw`,|([\w\s]+),\s*(\d+?%?\/?\d*),)\s*(.+)\s+([xX]*)$`;
+            return RegExp(taskRegex);
+          },
           before(line) {
             // Sigh, some lines don't end in "X", so add it if needed
             if (!/\s+[xX]+$/.test(line)) return line + ' X';
@@ -252,16 +266,26 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
           },
           convert(line, linebreak = '\n') {
             return line.replace(
-              this.regex,
-              (_, time, title, progress, description, poms) => {
-                title = _matchCaseToMedia(title, _parsley.media) || title;
+              this.regex(),
+              (_, time, topic, title, progress, description, poms) => {
+                // Te following might change as more media types are supported
+                const isBook = progress !== undefined;
                 // Magic number, what I'm using on my pomsheet
                 const maxLineLength = CONSTANTS.maxLineLength;
                 // Likewise, used to split descriptions into multiple lines
                 const maxBodyLength = CONSTANTS.maxBodyLength;
                 const tabLength = CONSTANTS.tabLength; // for clarity, below
-    
-                const body = `Read: ${title} -> ${progress}, ${description}`;
+
+                let body;
+                if (isBook) {
+                  topic = 'Read';
+                  title = _matchCaseToGiven(title, _parsley.media) || title; // fallback if none exists
+                  body = `${topic}: ${title} -> ${progress}, ${description}`;
+                } else {
+                  // topic must have existed for match, so no fallback
+                  topic = _matchCaseToGiven(topic, _parsley.stats.category);
+                  body = `${topic}: ${description}`;
+                }
                 let bodyLineOne, bodyLineTwo;
     
                 if (body.length >= maxBodyLength) {
@@ -277,9 +301,9 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
               }
             );
     
-            function _matchCaseToMedia(sloppyTitle, media) {
+            function _matchCaseToGiven(sloppyText, media) {
               return Object.keys(media).find(title => {
-                return sloppyTitle.toLowerCase() === title.toLowerCase();
+                return sloppyText.toLowerCase() === title.toLowerCase();
               });
             }
           },
@@ -547,7 +571,8 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
           if (line.includes('-- old --')) break;
 
           Object.keys(registry).some(type => {
-            const { regex, before, after, parse } = registry[type];
+            const { regex: regexOrFunc, before, after, parse } = registry[type];
+            const regex = typeof regexOrFunc === 'function' ? regexOrFunc() : regexOrFunc;
             const normalizedTarget = before ? before(line) : line;
             if (!regex.test(normalizedTarget)) return false;
 
