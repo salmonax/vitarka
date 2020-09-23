@@ -119,10 +119,17 @@ export default class Main extends Component {
         br
         h3 Active Books
         each book in this.activeBooks
-          h4(
-            key=book
-            onClick=${e => this.navTo(`/book_start`, { book })}
-          )= book
+          div(key=book style={ 
+            display: 'flex',
+            height: 16,
+          })
+            h4(
+              key=book
+              onClick=${e => this.navTo(`/book_start`, { book })}
+            )= book
+            h4(style={ marginLeft: 'auto' })
+              = common.parsleyData.media[book].pomsLeft !== undefined ? common.parsleyData.media[book].pomsLeft || 'DONE' : ''  
+            h4(style={ width: (common.parsleyData.media[book].pomsLeft == 0 ? 45 : 90) }) ${common.parsleyData.media[book].pomsLeft ? '('+Math.ceil(common.parsleyData.media[book].pomsLeft/6) + ' days)' : ''}
         .flex-layer
           .rows
             h1 History

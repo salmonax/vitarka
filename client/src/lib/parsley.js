@@ -713,18 +713,33 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
   for (let item in parsley.media) {
     // TODO: don't sort by progress but by data!
     // This should properly handle media re-starts
-    parsley.media[item].tasks.sort((a, b) => a.progress - b.progress);
+    const mediaItem = parsley.media[item];
+    mediaItem.tasks.sort((a, b) => a.progress - b.progress);
+
+    // VITARKA: canonize book progress info from BookCovers;
+    // much better here
+    if (mediaItem.goal) {
+      const progToDate = mediaItem.tasks[mediaItem.tasks.length-1].progress;
+      const pomsToDate = mediaItem.tasks.reduce((acc, n) => acc+(+n.duration), 0);
+      const progPerPom = progToDate/pomsToDate;
+      // not on a map, so w=on't render the component
+      Object.assign(mediaItem, {
+        progPerPom,
+        pomsToDate,
+        pomsLeft: Math.round((mediaItem.goal-progToDate)/progPerPom),
+      });
+    }
 
     // Add full title and author properties, if available
     if (!mediaAliases[item]) continue;
     let { title, author } = mediaAliases[item];
     Object.assign(
-       parsley.media[item],
+       mediaItem,
        { title },
        author && { author },
     );
     // Add aliased name to map; consider changing
-    parsley.aliasMap[title] = item;
+    parsley.aliasMap[title] = item;    
   }
 
   // VITARKA: link up the dateBucket, currently used for sheet merges
