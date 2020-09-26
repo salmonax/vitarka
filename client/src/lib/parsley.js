@@ -718,6 +718,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
 
     // VITARKA: canonize book progress info from BookCovers;
     // much better here
+    // TODO: consider putting it into a subobject; BookCovers puts it in "vitarka"
     if (mediaItem.goal) {
       const progToDate = mediaItem.tasks[mediaItem.tasks.length-1].progress;
       const pomsToDate = mediaItem.tasks.reduce((acc, n) => acc+(+n.duration), 0);
@@ -784,7 +785,8 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
         duration,
         //NOTE: might cause problem with filters
         media =  null,
-        progress = null;
+        progress = null,
+        progUnit = false;
 
     var split = line.split(/\s+|\t+/);
     time = split[0];
@@ -844,7 +846,8 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       month: monthName(endDate.getMonth()),
       week: weekNum(endDate.getDate()),
       media: media,
-      progress: progress
+      // TODO: maybe progress should go in media? Would be a breaking change, though
+      progress: progress,
     }
 
     function checkTag(maybeTag) {
@@ -869,12 +872,17 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
         var goal;
         if (value.indexOf("%") != -1) { 
           goal = 100
+          progUnit = 'percentage';
         } else if (pages) {
           goal = +pages;
+          progUnit = 'pages';
         }
         parsley.media[item] = parsley.media[item] || {}
         if (goal) { parsley.media[item]["goal"] = goal }
         media = item;
+        // VITARKA: Add progUnit here, I guess; yeesh!
+        parsley.media[item].progUnit = progUnit;
+        parsley.media[item].title = item; // Hmm... the abbrevs aren't *actually* titles, but leaving for now
         progress = parseInt(value);
         //TODO: remove rocket and value, but preserve description
         return text;
