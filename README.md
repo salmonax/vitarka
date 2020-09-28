@@ -142,7 +142,7 @@ So there might be hope, provided that each unseparated concern is extracted and 
 
 ## Contributing
 
-For now, if this seems interesting (and you happen to be outrageously patient), contact me at george@nomadscience.org and we might be able to collab on making it more contrib-ready. I'd also love to exchange ideas if you've concocted a similar system,
+For now, if this seems interesting (and you happen to be outrageously patient), contact me at george@nomadscience.org and we might be able to collab on making it more contrib-ready. I'd also love to exchange ideas if you've concocted a similar system.
 
 ## License
 
