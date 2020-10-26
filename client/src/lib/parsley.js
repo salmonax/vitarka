@@ -56,7 +56,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
   var lines = Array.isArray(linesOrFile) ? linesOrFile : linesOrFile.split(/(\r?\n)/);
   var currentDate;
   var mediaAliases = {};
-  var dateBucket = {}; 
+  var dateBucket = {};
   var parsley = {
     dateBucket,
     linebreak: RegExp.$1,
@@ -71,6 +71,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
     DEFAULTS: PARSLEY_DEFAULTS,
 
     parseTask, // VITARKA: attached to keep mergeScratch pure-ish
+    parseCommentStartHour, // VITARKA: attached for same reason as above
     hasDate(string) {
       return !!dateBucket[string];
     },
@@ -111,7 +112,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
     startHour: function(adjustedUTC) {
       return parsley.startHours[(new Date(adjustedUTC).toLocaleDateString())] ||
         // VITARKA: this probably needs to be clamped to not be buggy;
-        // also, should probably be a configurable option 
+        // also, should probably be a configurable option
         parsley.startHours[parsley.getNearestDayWithStartHour(adjustedUTC, true)] ||
         parsley.DEFAULTS.dayStartHour;
     },
@@ -172,13 +173,13 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
      * VITARKA: different ES6 style; don't care
      * Dumping this here for the time being; it MIGHT be more
      * appropriate elsewhere, but putting it here both separates it
-     * from the main app and gives me easy access to the parsley object, 
+     * from the main app and gives me easy access to the parsley object,
      * which will help with changing the case for lazily-entered book aliases.
-     * 
+     *
      * It converts from a shorter format that I use on my phone. It should:
      *  1. Take the scratch sheet and an optional parsley object.
-     *  2. Convert it to standard format, with appropriate width and tabbing. 
-     *  3. For descriptions that were truncated, add an indented comment 
+     *  2. Convert it to standard format, with appropriate width and tabbing.
+     *  3. For descriptions that were truncated, add an indented comment
      *     with the rest of the description right below it.
      *  3. Merge the converted scratch sheet into a pomsheet string, but
      *     without of course changing our closured parsley instance.
@@ -186,8 +187,8 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
      *      a. The merged version of the pomsheet we just made
      *      b. An updated scratch sheet, with the processed dates prefixed with "@",
      *        the termination marker
-     * 
-     * NOTE: In Vitarka, the intention is that the caller will use the output 
+     *
+     * NOTE: In Vitarka, the intention is that the caller will use the output
      * to write both to the scratch sheet AND to the pomsheet.
     **/
     mergeScratch(sheet, _parsley = parsley) {
@@ -200,9 +201,27 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
         tabLength: 8,
       };
       const typeRegistry = {
+        // Oh boy, this commentStartHour thing cropped up everywhere, didn't it?
+        commentStartHour: {
+          regex: /^#\s?([0-9][0-9]?)(?:$|\:\s*[0-9][0-9]?\s+[0-9][0-9]?\s+[0-9][0-9]?\s*$)/,
+          convert(line, linebreak = '\n') {
+            return line.replace(
+              this.regex,
+              (_, start) => `# ${start}: ${+start + 5} ${+start + 10} ${+start + 15}`,
+            );
+          },
+          parse(converted, lastOfType) {
+            // Note: calculating the startHour is a bit pointless, but
+            // feels weird to follow this dumb pattern without doing it.
+            return {
+              startHour: _parsley.parseCommentStartHour(converted),
+              date: lastOfType.date,
+            };
+          },
+        },
         date: {
           regex: /^(\d\d?)\/(\d\d?)\/?(\d?\d?\d?\d?)\s*$/,
-          // WARNING: this "before" is ONLY for live merging, which 
+          // WARNING: this "before" is ONLY for live merging, which
           // needs to be able to merge the entire scratch file. I went
           // through various ways to mark dates "read" over the years,
           // and this will clean them out.
@@ -287,20 +306,20 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
                   body = `${topic}: ${description}`;
                 }
                 let bodyLineOne, bodyLineTwo;
-    
+
                 if (body.length >= maxBodyLength) {
                   const lastSpace = body.slice(0, maxBodyLength).lastIndexOf(' ');
                   bodyLineOne = body.slice(0, lastSpace);
                   bodyLineTwo = body.slice(lastSpace + 1);
                 }
-    
+
                 const trailingTabCount = Math.max(1, Math.ceil((maxLineLength - (bodyLineOne || body).length) / tabLength));
                 const tabsAndPoms = `${'\t'.repeat(trailingTabCount)}${(poms || 'X').toUpperCase()}`;
                 return `${time}\t${bodyLineOne || body}${tabsAndPoms}`
                   + (bodyLineTwo ? `${linebreak}==\t      ${bodyLineTwo}` : '');
               }
             );
-    
+
             function _matchCaseToGiven(sloppyText, media) {
               return Object.keys(media).find(title => {
                 return sloppyText.toLowerCase() === title.toLowerCase();
@@ -312,26 +331,26 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
           },
         },
       };
-    
+
       const { convertedScratchLines, updatedScratch } = convertScratch(sheet, typeRegistry);
-    
+
       return {
         updatedPomsheet: buildMergedPomsheet(convertedScratchLines),
         updatedScratch,
       };
-    
+
       function buildMergedPomsheet(scratchData) {
         const clonedLines = _parsley.lines.slice()//(0, 540); // expand to test case until this is done
-    
+
         const { dateBucket, linebreak: br } = _parsley;
         const dates = Object.keys(dateBucket).sort((a, b) => b.utc - a.utc);
         const mergedScratchDateBucket = {};
         /**
          * Hmm, on second thought, why don't we just:
-         * 1. have scratchDateBucket merge tasks with the pomsheet, then reverse sort them 
+         * 1. have scratchDateBucket merge tasks with the pomsheet, then reverse sort them
          * 2. in the next forEach, in the date-is-in-pomsheet case, instead of iterating across
-         *  dateBucket items, iterate across the merged ones. Whenever the index is -1, 
-         *  grab the last item it found and insert it above. 
+         *  dateBucket items, iterate across the merged ones. Whenever the index is -1,
+         *  grab the last item it found and insert it above.
          * 3. If it's the last item, use the current date's endIndex
          */
         // Annoyingly, legacy parsley doesn't provide metadata, so do it here
@@ -342,7 +361,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
             if (!mergedScratchDateBucket[taskDate]) {
               // Keep consistent with other dateBucket, just because
               mergedScratchDateBucket[taskDate] = {
-                tasks: _parsley.dateBucket[taskDate] ? _parsley.dateBucket[taskDate].tasks.map(toWrapped) : []
+                tasks: _parsley.dateBucket[taskDate] ? _parsley.dateBucket[taskDate].tasks.map(toWrapped) : [],
               };
             }
             mergedScratchDateBucket[taskDate].tasks.push(line);
@@ -354,18 +373,18 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
             mergedScratchDateBucket[date].tasks
               .sort((a, b) => +b.parsed.time - +a.parsed.time)
               // Prevent duplicates here. If everything else is working correctly,
-              // it's only strictly required for the current day (which is never marked 
+              // it's only strictly required for the current day (which is never marked
               // "read" until the following day) but running it indiscriminately
-              // will also avoid a bad writes in conditions where the pomodoro sheet has been 
+              // will also avoid a bad writes in conditions where the pomodoro sheet has been
               // correctly written but the scratch sheet was either overwritten by the user
               // with unmarked dates or otherwise failed to write.
               .filter(({ text, parsed }, i, a) => {
                 if (parsed.index !== -1) return true; // let all non-scratch entries through
                 const prev = a[i - 1];
                 const next = a[i + 1];
-                // Do two types of dup check: 
+                // Do two types of dup check:
                 // 1. Check for same media title, time, and progress, regardless of description;
-                // As a pomsheet user, it's pretty common to completely rephrase descriptions, 
+                // As a pomsheet user, it's pretty common to completely rephrase descriptions,
                 // so this is more permissive and robust than a text check.
                 if (parsed.media) {
                   const isSameMediaEntry = other =>
@@ -373,7 +392,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
                     other.parsed.media === parsed.media &&
                     // for live-merge, ignore the time; sometimes it will
                     // be jiggered by hand to prevent overlaps after a manual merge
-                    //other.parsed.time === parsed.time && 
+                    //other.parsed.time === parsed.time &&
                     other.parsed.progress === parsed.progress;
                   if (isSameMediaEntry(prev)) return false;
                   if (isSameMediaEntry(next)) return false;
@@ -382,19 +401,19 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
                 // 2. Do a fallback check, which relies on the line text:
                 const truncText = text.split(br)[0]; // only take first half of multiline entries
                 // WARNING: the behavior below depends on toWrapped.
-                // If we later add a line wrapper to Parsley that concatenates 
+                // If we later add a line wrapper to Parsley that concatenates
                 // a full description, make sure to only grab the first line.
                 if (prev && truncText === prev.text) return false;
                 if (next && truncText === next.text) return false;
                 return true;
-                
+
                 // 3. Some looser heuristics could be added (eg. time + topic + number of poms)
                 // (The reason for all this is to prevent overwriting an item just because it
                 // has the same timestamp; they're arbitrarily rounded up or down by the user, so
                 // timestamps will sometimes overlap.
               });
         });
-    
+
         // WARNING: this is an awful way to do this; we shouldn't need to re-parse the dates.
         // Leaving it for now.
         const allDates =
@@ -403,24 +422,24 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
             .filter((n, i, a) => a.indexOf(n) === i)
             .map(text => ({ type: 'date', parsed: Date.parse(text), text }))
             .sort((a, b) => a.parsed - b.parsed);
-    
+
         let dateInsertion = {
           cursor: null,
           mergedLine: '',
           prepend: '',
         };
-    
+
         allDates.forEach(({ type, text: dateText, parsed }, i, _allDates) => {
           if (!mergedScratchDateBucket[dateText]) return; // only interested in scratch-only dates
-    
+
           const dateAbove = _allDates[i + 1] && _allDates[i + 1].text;
           const dateBelow = _allDates[i - 1] && _allDates[i - 1].text;
           if (_parsley.hasDate(dateText)) {
             const date = dateBucket[dateText];
             const mergedTasks = mergedScratchDateBucket[dateText].tasks;
-    
+
             // dateBucket[dateText].tasks.forEach(n => console.log(n.index, _parsley.lines[n.index]));
-    
+
             const needsMerge = task => task.parsed.index === -1;
             let insertion = {
               cursor: null,
@@ -433,7 +452,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
               if (needsMerge(task)) {
                 if (taskBelow) {
                   // If the task underneath it doesn't need to be merged,
-                  // it means that this is the first task in an insertion set, 
+                  // it means that this is the first task in an insertion set,
                   // so set the cursor and initiate the line
                   if (!needsMerge(taskBelow)) {
                     insertion.cursor = taskBelow.parsed.index;
@@ -445,7 +464,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
                 } else {
                   // If there's no task below, use the date's endIndex, which is always
                   // either the line before the next date or the end of the file
-    
+
                   // We need to pay attention to the following conditions:
                   //
                   // 1. Whether the line at the cursor is blank, which can
@@ -464,16 +483,16 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
                     startingInsertion = br;
                     insertion.prepend = lineAtCursor + br;
                   }
-    
+
                   insertion.cursor = date.endIndex;
                   insertion.mergedLine = task.text + br + startingInsertion;
-    
+
                 }
               }
               if (!needsMerge(task) || !taskAbove) {
                 if (insertion.cursor) {
                   clonedLines[insertion.cursor] = insertion.prepend + insertion.mergedLine;
-    
+
                   insertion.cursor = null;
                   insertion.mergedLine = '';
                   insertion.prepend = '';
@@ -486,13 +505,13 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
             const joinedDateAndTasks =
               dateText + br + br +
               mergedScratchDateBucket[dateText].tasks.map(n => n.text).join(br); //+
-    
+
             // This is just to keep semantics identical to task logic:
             const dateNeedsMerge = date => !dateBucket[date];
-    
+
             if (dateBelow) {
               // If dateBelow was already in the original, it means
-              // this is the first date in an insertion set, so concatenate 
+              // this is the first date in an insertion set, so concatenate
               // it with joinedDateAndTasks and set the cursor
               if (!dateNeedsMerge(dateBelow)) {
                 dateInsertion.cursor = dateBucket[dateBelow].index;
@@ -512,7 +531,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
             } else {
               // No dateBelow means we're anchoring to the end of the last date
               dateInsertion.cursor = dateBucket[dates[dates.length - 1]].endIndex;
-    
+
               // NOTE: in this condition, we're using the endIndex, which *should* be a blank line,
               // but might not be. If it isn't, it belongs *before* our insertion. Check for it here,
               // and set dateInsertion.prepend accordingly.
@@ -534,15 +553,24 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
             // collecting dates, and here's where we dump the last set.
             if (dateInsertion.cursor !== null) {
               clonedLines[dateInsertion.cursor] = dateInsertion.prepend + dateInsertion.mergedLine;
-    
+
               dateInsertion.cursor = null;
               dateInsertion.mergedLine = '';
               dateInsertion.prepend = '';
             }
           }
         });
-        return clonedLines.join('');
-    
+        // FATAL: this is a kludge to add commentStartHours, which takes advantage of the way
+        // parsley concatenates multiple dates with the same info. The correct way to do
+        // it will have to wait; just be aware that this crap should only be added on a live-merge
+        // and never written out to the pomsheet.
+        const startHourPostfix = scratchData
+          .filter(datum => datum.type === 'commentStartHour')
+          .map(datum => br + datum.parsed.date + br + datum.text)
+          .join('');
+
+        return clonedLines.join('') + startHourPostfix;
+
       }
       function convertScratch(sheet, registry) {
         // Intentionally preserve linebreaks with matchgroup
@@ -550,7 +578,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
         const convertedLines = [];
         const lastOfType = {};
 
-        // WARNING: these are here as a typeRegistry.date kludge and should be refactored out 
+        // WARNING: these are here as a typeRegistry.date kludge and should be refactored out
         const accumulatorBucket = {};
         // Some dates in the scratch file DO have a year on them; strip it so that the basis
         // for comparing dates is always the same
@@ -563,7 +591,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
           // so break when the first one is found.
           // When not live-merging, uncomment the following:
           // if (line[0] === '@') break;
- 
+
 
           // My scratch file morphs into various previous formats, the oldest
           // transition of which is marked as the following, after which
@@ -630,14 +658,14 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       }
     }
     if (isCommentStartHour(line)) {
-      var startHour = +line.substr(1).trim().split(':')[0];
+      var startHour = parseCommentStartHour(line);
       if (currentDate && !isNaN(startHour)) {
         parsley.startHours[currentDate] = startHour;
       }
       continue;
     }
     if (isComment(line)) { continue; }
-  
+
     if (isStartHour(line)) {
       var startHour = +line.split(':')[1];
       if (currentDate && !isNaN(startHour)) {
@@ -657,13 +685,13 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       // I definitely need to decide how to deal with that case; I can still only store one index,
       // say, and decide that it'll always be the one at the top, or at the bottom. Or I can
       // store a list of indices and deal with it wherever it's used, just needs to be deliberate.
-      dateBucket[currentDate] = { 
+      dateBucket[currentDate] = {
         text: currentDate,
-        index: i, 
-        tasks: [], 
-        next: null, 
-        prev: null, 
-        utc: Date.parse(line), 
+        index: i,
+        tasks: [],
+        next: null,
+        prev: null,
+        utc: Date.parse(line),
         endIndex: null,
       };
     } else if (isTask(line)) {
@@ -741,7 +769,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
        author && { author },
     );
     // Add aliased name to map; consider changing
-    parsley.aliasMap[title] = item;    
+    parsley.aliasMap[title] = item;
   }
 
   // VITARKA: link up the dateBucket, currently used for sheet merges
@@ -755,7 +783,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       // For the last item, just stick it at the end of the file.
       // WARNING: Ignores the edge case that there might be a bunch of non-date specific
       // junk there. The only way to do this fully correctly would involve associating
-      // subsets of line types with their nearest date and checking for those types, 
+      // subsets of line types with their nearest date and checking for those types,
       // but YAGNI for now. This whole thing is junk.
       dateBucket[date].endIndex = parsley.lines.length-1;
     }
@@ -764,7 +792,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       prev: dateBucket[dates[i+1]],
     });
   });
-  
+
   return parsley;
 
   function updateStats(task) {
@@ -774,6 +802,9 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       parsley.stats[key][value] = parseInt(parsley.stats[key][value]) || 0;
       parsley.stats[key][value] += parseInt(task.duration);
     });
+  }
+  function parseCommentStartHour(line) {
+    return +line.replace('#', '').split(':')[0].trim();
   }
 
   function parseTask(line, index, _currentDate = currentDate) {
@@ -871,7 +902,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
         var value = set[1];
         var pages = value.split(',')[0].split('/')[1];
         var goal;
-        if (value.indexOf("%") != -1) { 
+        if (value.indexOf("%") != -1) {
           goal = 100
           progUnit = 'percentage';
         } else if (pages) {
@@ -909,7 +940,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
   function isTagDefinition(line) {
     return /^[^\d]{1}\s.*/.test(line);
   }
-  
+
   // Vitarka: reading a comment line annoys me a bit, but in 2020 I've
   // adopted a style across many days that involves a comment
   // of the format "# <startHour>: <Block 1 end> <Block 2 end> <Block 3 end>"
