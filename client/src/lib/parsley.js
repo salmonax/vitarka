@@ -727,6 +727,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       Object.assign(mediaItem, {
         progPerPom,
         pomsToDate,
+        progToDate,
         pomsLeft: Math.round((mediaItem.goal-progToDate)/progPerPom),
       });
     }

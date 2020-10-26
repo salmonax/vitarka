@@ -95,6 +95,8 @@ export default class Main extends Component {
   get main() {
     const { common } = this.props;
     // NOTE: extract all the garbage the template to methods and otherwise clean it up
+    const leftOfTotal = (book) => book.pomsLeft ? book.pomsLeft + '/' + (book.pomsLeft + book.pomsToDate) : false;
+
     return pug`
       .screen
         h1.center Main
@@ -123,8 +125,8 @@ export default class Main extends Component {
               onClick=${e => this.navTo(`/book_start`, { book })}
             )= book
             h4(style={ marginLeft: 'auto' })
-              = common.parsleyData.media[book].pomsLeft !== undefined ? common.parsleyData.media[book].pomsLeft || 'DONE' : ''
-            h4(style={ width: (common.parsleyData.media[book].pomsLeft == 0 ? 45 : 90) }) ${common.parsleyData.media[book].pomsLeft ? '('+Math.ceil(common.parsleyData.media[book].pomsLeft/6) + ' days)' : ''}
+              = common.parsleyData.media[book].pomsLeft !== undefined ? leftOfTotal(common.parsleyData.media[book]) || 'DONE' : ''
+            h4(style={ width: (common.parsleyData.media[book].pomsLeft === 0 ? 45 : 90) }) ${common.parsleyData.media[book].pomsLeft ? '('+Math.ceil(common.parsleyData.media[book].pomsLeft/6) + ' days)' : ''}
         .flex-layer
           .rows
             h1 History
