@@ -136,6 +136,14 @@ export default class Common {
 
     console.warn('Caller: ' + caller);
     console.log('updating pomsheet');
+    let _updateStart = Date.now();
+    // Really kludgy, but should skip everything if we know nothing has changed
+    if (this.hasPomsheetLoadedOnce && result === this.lastPomsheetResult && caller !== 'onScratchUpdate') {
+      console.warn('onPomsheetUpdate: skipped update because lastPomsheetResult unchanged');
+      return;
+    }
+
+    // Um, this shouldn't run unless the file has changed, right?
     if (this.hasPomsheetLoadedOnce && this.rawScratch) {
       // On any subsequent pomsheet loads where the scratch sheet has already loaded,
       // build parsleyData out of a merged sheet rather than the raw data
@@ -147,13 +155,19 @@ export default class Common {
       );
       // TODO: mergeScratch should probably look more look like this:
       //const { updatedPomsheet } = ParsleyService.mergeScratch(rawScratch, parsleyData);
-      this.rawPomsheet = updatedPomsheet;
-      this.parsleyData =  ParsleyService.buildParsleyData(updatedPomsheet);
-      
+
+      // Only rebuild the parsley data if the merged raw pomsheet has changed:
+      if (this.rawPomsheet !== updatedPomsheet) {
+        this.rawPomsheet = updatedPomsheet;
+        this.parsleyData =  ParsleyService.buildParsleyData(updatedPomsheet);
+      } else {
+        console.warn('onPomsheetUpdate: skipped parsleyData rebuild because merged sheet unchanged');
+      }
     } else {
       const rawPomsheet = result.file; // should maybe be result.text
       this.rawPomsheet = rawPomsheet;
       this.parsleyData = ParsleyService.buildParsleyData(rawPomsheet);
+      console.log('Has not loaded once, or no rawScratch exists');
     }
 
     this._lastPomsheetHash = result.content_hash;
@@ -162,6 +176,7 @@ export default class Common {
     this.pomsheetHasLoadedResolve();
     this.runParsleyCallbacks(this.parsleyData);
     // this.parsleyData.mergeScratch(window.scratch);
+    console.log('updated pomsheet. elapsed:', Date.now() - _updateStart + 'ms');
     return this.parsleyData;
   }
   get hasPomsheetLoadedOnce() {
@@ -175,7 +190,7 @@ export default class Common {
   @action.bound onScratchUpdate(result) {
     console.warn('##### SCRATCH UPDATE DETECTED. WILL CALL ONPOMSHEETUPDATE() ####');
     this.rawScratch = result.file;
-    this.pomsheetHasLoaded.then(_ => this.onPomsheetUpdate());
+    this.pomsheetHasLoaded.then(_ => this.onPomsheetUpdate(undefined, 'onScratchUpdate'));
   }
 
   // Returns Unix time adjusted for the practical EOD.
@@ -280,7 +295,7 @@ export default class Common {
     return this.getBlockInfoToday();
   }
 
-  // NOTE: This method of checking the heartbeat does literally 
+  // NOTE: This method of checking the heartbeat does literally
   // nothing on Cordova, so make sure to check for it.
   startNetworkHeartbeat(interval = 30000, offlineInterval = 5000) {
     if (this._heartbeatTimeout) window.clearTimeout(this._heartbeatTimeout);
@@ -395,7 +410,7 @@ export default class Common {
     if (!this.parsleyData) return;
     const diegesis = this.getDiegesis();
     if (diegesis._hash === this.diegesis._hash) return;
-    
+
     this.diegesis = diegesis;
     console.warn('!! diegesis has changed');
   }
@@ -469,8 +484,8 @@ export default class Common {
       Calculating turnips on the "interval" are a little subtler than
       for the block, here's some discussion:
 
-      1. The "saturation" point has been a part of the system for a while 
-        and is worth showing at the interval level. It's the point after 
+      1. The "saturation" point has been a part of the system for a while
+        and is worth showing at the interval level. It's the point after
         which you have to work nonstop until the end of the block in order
         to "win" the turnip.
       2. It's worth showing that the block turnip has been lost. The naive
@@ -478,7 +493,7 @@ export default class Common {
         number of poms left based on the current block. However, there
         might be a timer running already, and there's no telling how many
         will be recorded when they are.
-      3. Except, there IS a way; the last completed set of poms shows the 
+      3. Except, there IS a way; the last completed set of poms shows the
         point before which there was definitely dead time. For instance, if
         a single pom was recorded at pom 7/10 of the block, and there were
         10 poms in the turnip, we can know it's dead. Just, not before that
@@ -601,7 +616,7 @@ export default class Common {
   }
 
   @computed get booksByLastRead() {
-    // TODO: consider changing the media object to include the lastRead property!   
+    // TODO: consider changing the media object to include the lastRead property!
     if (!this.parsleyData) return [];
     const { media } = this.parsleyData;
     return Object.keys(media)
@@ -612,5 +627,5 @@ export default class Common {
           return acc.concat({ title, lastRead, tasks });
       }, [])
       .sort((a, b) => b.lastRead - a.lastRead);
-  }  
+  }
 }
