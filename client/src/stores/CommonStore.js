@@ -132,13 +132,14 @@ export default class Common {
   // It's called in several contexts, but always when the pomsheet is done loading.
   @action.bound onPomsheetUpdate(result = this.lastPomsheetResult, caller) {
     // 2020: Sigh, tech debt; this makes rawPomsheet and _lastPomsheetHash redundant
+    this._oldPomsheetResult = this.lastPomsheetResult; // why?!
     this.lastPomsheetResult = result;
 
     console.warn('Caller: ' + caller);
     console.log('updating pomsheet');
     let _updateStart = Date.now();
     // Really kludgy, but should skip everything if we know nothing has changed
-    if (this.hasPomsheetLoadedOnce && result === this.lastPomsheetResult && caller !== 'onScratchUpdate') {
+    if (this.hasPomsheetLoadedOnce && this._oldPomsheetResult === this.lastPomsheetResult && caller !== 'onScratchUpdate') {
       console.warn('onPomsheetUpdate: skipped update because lastPomsheetResult unchanged');
       return;
     }
