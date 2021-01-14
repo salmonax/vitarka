@@ -23,7 +23,7 @@
     "start-ssl": "concurrently \"npm run dev-ssl\" \"npm run fileserver-ssl\"",
     "server": "ENV=PRODUCTION PORT=3000 pm2 start ./server/bin/www",
     "push:droid": "cd native/cordova && npm run push && cd -",
-    "droid-devserver-on": "echo \"DEBUG = { devServerURL: 'https://192.168.0.106:3000/' }\" > native/cordova/www/_debug.js",
+    "droid-devserver-on": "echo \"DEBUG = { devServerURL: 'https://192.168.1.103:3000/' }\" > native/cordova/www/_debug.js",
     "droid-devserver-off": "echo \"\" > native/cordova/www/_debug.js"
   },
   "repository": {
