@@ -156,13 +156,7 @@ if (config.mode === 'production' && PLATFORM === 'web') {
     path: path.join(__dirname, 'native/cordova/www/webpack'),
     filename: 'bundle.js'
   };
-  config.plugins = [
-    new HtmlWebpackPlugin({
-      template: 'client/static/index.html',
-      inject: false
-    }),
-  ];
-  
+
   config.plugins.push(
     new CopyWebpackPlugin([{
       from: path.join(__dirname, 'client/static'),
