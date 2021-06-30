@@ -195,6 +195,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       // These constants are currently used in typeRegistry.task.convert
       // for splitting overlong lines. We're collecting them here
       // for visibility.
+      sheet = sheet.replace(/\r/g,''); // KLUDGE ALERT: fix a rotten assumption, badly.
       const CONSTANTS = {
         maxLineLength: 80,
         maxBodyLength: 79,
@@ -822,7 +823,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
 
     var split = line.split(/\s+|\t+/);
     time = split[0];
-    duration = split[split.length-1].replace(/[^Xx]/g,'').length;
+    duration = split[split.length-1].replace(/[^Xx]/g,'').length; // Dear preivous self: WAT?
 
     tag = checkTag(split[1]);
     var middle = split.slice((tag?2:1),split.length-1).join(' ').split(':');
