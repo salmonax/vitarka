@@ -20,7 +20,7 @@ const TimerProgress = props => pug`
       h1(onClick=${props.end}) &nbspEnd
 `;
 
-const Setting = ({ label })=> pug`
+const Setting = ({ label }) => pug`
   .rows.wide
     p {label}
     p On/Off
@@ -89,13 +89,25 @@ export default class Main extends Component {
   }
 
   @computed get activeBooks() {
-    return this.props.common.booksByLastRead.slice(0, 16).map(n => n.title);
+    return this.props.common.booksByLastRead
+      .map(n => n.title);
+  }
+
+  pomsRemaining({ goal, pomsLeft, pomsToDate }) {
+    if (!goal) return '';
+    return pomsLeft ? pomsLeft + '/' + (pomsLeft + pomsToDate) :
+    `DONE (${pomsToDate} poms)`;
   }
 
   get main() {
     const { common } = this.props;
+    const media = common.parsleyData && this.activeBooks.length ? common.parsleyData.media : {};
     // NOTE: extract all the garbage the template to methods and otherwise clean it up
-    const leftOfTotal = (book) => book.pomsLeft ? book.pomsLeft + '/' + (book.pomsLeft + book.pomsToDate) : false;
+    const daysLeft =
+      ({ goal, pomsLeft }, ppd = 6) =>
+        goal ?
+          `${pomsLeft ? '(' + Math.ceil(pomsLeft / ppd) + ' days)' : ''}` :
+          '';
 
     return pug`
       .screen
@@ -106,27 +118,34 @@ export default class Main extends Component {
         p Poms Done Today: ${common.pomsToday}
         p Saturation: <WIP>
         br
-        h3 Active Topics
-        h4 <WIP>
+        // h3 Active Topics
+        // h4 <WIP>
         // each topic in this.topics.toJS()
         //   h4(
         //     key=topic
         //     onClick=${e => this.navTo('/topic_start', { topic })}
         //   )= topic
-        br
+        // br
         h3 Active Books
-        each book in this.activeBooks
-          div(key=book style={
-            display: 'flex',
-            height: 16,
-          })
-            h4(
-              key=book
-              onClick=${e => this.navTo(`/book_start`, { book })}
-            )= book
-            h4(style={ marginLeft: 'auto' })
-              = common.parsleyData.media[book].pomsLeft !== undefined ? leftOfTotal(common.parsleyData.media[book]) || 'DONE' : ''
-            h4(style={ width: (common.parsleyData.media[book].pomsLeft === 0 ? 45 : 90) }) ${common.parsleyData.media[book].pomsLeft ? '('+Math.ceil(common.parsleyData.media[book].pomsLeft/6) + ' days)' : ''}
+        div(style=${{ minHeight: 72, maxHeight: 370, overflow: 'auto', overflowX: 'hidden' }})
+          each book in this.activeBooks
+            div(key=book style={
+              display: 'flex',
+              height: 16,
+              whiteSpace: 'nowrap',
+            })
+              h4(
+                key=book
+                onClick=${e => media[book].goal && this.navTo(`/book_start`, { book })}
+                style=${{
+                  color: media[book].goal ? 'white' : '#aaa',
+                }}
+              )
+                = book
+              h4(style={ marginLeft: 'auto' })
+                = this.pomsRemaining(media[book])
+              h4(style={ width: (media[book].pomsLeft === 0 ? 20 : 90) })
+                = daysLeft(media[book])
         .flex-layer
           .rows
             h1 History
@@ -137,7 +156,7 @@ export default class Main extends Component {
   get book_start() {
     if (!this.navState) {
       // Just temporarily, until I rejigger the rest
-      this.navState = { book: 'SitAnth' };
+      this.navState = { book: 'rust book' };
     }
     // TODO: repattern to obviate this:
     const { parsleyData } = this.props.common;
@@ -145,7 +164,7 @@ export default class Main extends Component {
       parsleyData.media[this.navState.book] :
       null
     window.book = bookData;
-    let fullTitle, startedOn, progress, avgRate, pomsLeft, estimatedEnd, summaries;
+    let fullTitle, startedOn, progress, avgRate, pomsLeft, estimatedEnd, summaries, pomsRemaining;
     if (bookData) {
       fullTitle = bookData.title;
       startedOn = bookData.tasks[0].date;
@@ -154,14 +173,15 @@ export default class Main extends Component {
       progress = bookData.tasks[bookData.tasks.length - 1].progress + progressLabel;
       avgRate = bookData.progPerPom.toFixed(1) + (bookData.progUnit === 'percentage' ? '%' : ' pages') + ' per pom';
       summaries = bookData.tasks.map((n, i, a) => {
-        const lastProgress = i ? a[i-1].progress : 0;
+        const lastProgress = i ? a[i - 1].progress : 0;
         const progress =
-          `${progUnit === 'pages' ? 'pp.' : '' }${lastProgress}-${n.progress}${progUnit == 'percentage' ? '%' : ''}`;
+          `${progUnit === 'pages' ? 'pp.' : ''}${lastProgress}-${n.progress}${progUnit == 'percentage' ? '%' : ''}`;
         // TODO: temporary kludge; Parsley should be doing this
         let description = n.description.split(',').slice(1).join(',').trim();
-        description = description.substr(0,1).toUpperCase() + description.substr(1);
+        description = description.substr(0, 1).toUpperCase() + description.substr(1);
         return `(${n.duration}) ${description} (${progress})`
       });
+      pomsRemaining = this.pomsRemaining(bookData);
     }
     // const fullTitle = bookData &&
     // const startedOn = bookData &&
@@ -176,12 +196,14 @@ export default class Main extends Component {
         br
         p Started On: ${startedOn}
         p Progress: ${progress}
+        p Poms Left: ${pomsRemaining}
         p Avg Rate: ${avgRate}
-        p Poms Left: 10/50
-        p End: 11/27/2020-12/8/2020
-        p Accuracy: Unknown
+        // p End: 11/27/2020-12/8/2020
+        // p Accuracy: Unknown
+        BookBurnDown(...bookData)
         br
-        h3(style=${{ maxHeight: 290, overflow: 'auto'}}) Summaries
+        h3 Summaries
+        div(style=${{ maxHeight: 219, overflow: 'auto' }})
           each task, i in summaries
             p.s(key=i) ${task}
         .flex-layer
@@ -189,9 +211,8 @@ export default class Main extends Component {
             h1 1 2 3 4
           .rows
             h1(
-              onClick=${
-                e => this.navTo('/book_running')
-              }
+              onClick=${e => this.navTo('/book_running')
+      }
             ) Start
     `;
   }
@@ -243,3 +264,59 @@ export default class Main extends Component {
 
 }
 
+function BookBurnDown({ goal, tasks, progToDate }) {
+  const progresses = [];
+  tasks && tasks.forEach((task, i, a) => {
+    const duration = +task.duration;
+    if (duration === 1) return progresses.push(task.progress);
+    const lastProg = !i ? 0 :  a[i-1].progress;
+    const progDelta = task.progress-lastProg;
+    Array(duration).fill().forEach((_, j) => {
+      const pomProg = lastProg+Math.round(progDelta/duration*(j+1));
+      progresses.push(pomProg);
+    });
+  });
+  if (!goal) return null;
+  return pug`
+    .chart(style=${{
+      marginTop: 10,
+      marginBottom: -10,
+      border: '1px solid black',
+      backgroundColor: '#4349',
+      width: '100%',
+      height: 100,
+      color: 'white',
+      display: 'flex',
+    }})
+      .percentage-container(style=${{
+        width: Math.floor((progToDate/goal)*100) + '%',
+        height: '100%',
+        display: 'flex',
+      }})
+        .bar(
+          key='start'
+          style=${{
+            display: 'flex',
+            margin: 0.5,
+            marginTop: 'auto',
+            marginBottom: 0,
+            width: '100%',
+            height: '100%',
+            background: '#f935',
+          }}
+        )
+        each progress, i in progresses
+          .bar(
+            key=i
+            style=${{
+              display: 'flex',
+              margin: 0.5,
+              marginTop: 'auto',
+              marginBottom: 0,
+              width: '100%',
+              height: (1 - progress/goal)*100 + '%',
+              background: '#f93f',
+            }}
+          )
+  `;
+}
