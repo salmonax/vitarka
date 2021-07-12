@@ -1,7 +1,7 @@
 # Vitarka
 <br>
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/2810775/92303014-03d04d00-ef26-11ea-955a-519f484a3d64.png">
+  <img src="https://user-images.githubusercontent.com/2810775/125364855-11194d80-e328-11eb-9162-61fbdd8d298f.png">
 </p>
 
 ## Background
