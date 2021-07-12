@@ -52,7 +52,7 @@ function handleTextStream(readableStream, onFirstFunc) {
       });
     });
   }
- 
+
   return pump();
 }
 
@@ -67,6 +67,9 @@ function streamPomsheet(onFirstFunc, filePath = POMSHEET_PATH) {
   }).then(res => {
     return handleTextStream(res.body, onFirstFunc);
   });
+}
+function streamScratch(onFirstFunc, filePath = SCRATCH_PATH) {
+  return streamPomsheet(onFirstFunc, filePath);
 }
 
 window.streamPomsheet = streamPomsheet
@@ -85,9 +88,9 @@ const $token = {
     _s.rawPomsheet = 'trying to load localStorage item';
     return window.localStorage.getItem('__vicara__');
    },
-  save:  token => { 
-    history ? 
-      history.replaceState(null, null, ' ') : 
+  save:  token => {
+    history ?
+      history.replaceState(null, null, ' ') :
       location.hash.replace(/^#/, '')
     localStorage.setItem('__vicara__', token);
     return token;
@@ -125,7 +128,7 @@ function downloadAndRead(pomsheetPath, handleResult = oldReadFunc) {
     reader.onloadend = () => {
       // _s.rawPomsheet = 'reader has loaded';
       handleResult({ file: reader.result, content_hash: res.content_hash, rev: res.rev });
-    } 
+    }
     reader.readAsText(res.fileBlob);
   })
 }
@@ -133,14 +136,14 @@ function downloadAndRead(pomsheetPath, handleResult = oldReadFunc) {
 let lastContentHash = null;
 function watchForChanges(path, runner, afterWatchFail, filePath = POMSHEET_PATH) {
   return dropbox.filesListFolder({ path })
-  .then(({ cursor }) => { 
-    return dropbox.filesListFolderLongpoll({ cursor }) 
+  .then(({ cursor }) => {
+    return dropbox.filesListFolderLongpoll({ cursor })
     .then(_ => dropbox.filesListFolderContinue({ cursor }) )
     .then((res) => {
       const entries = res.entries;
       console.log(entries);
       window.entries = entries;
-      const { content_hash, rev } = 
+      const { content_hash, rev } =
       entries.filter(({ path_lower }) => path_lower === filePath)[0] || {};
       if (!content_hash) {
         console.warn('DropboxService.watchForChanges: no content_hash... not running runner')
@@ -205,34 +208,34 @@ let dropbox, accessToken;
 /**
  * Sigh, where do I begin with this stuff...
  * 1. handleLogin literally calls two proprietary functions that
- *    only watch the pomodoro sheet? How am I supposed to expect that 
+ *    only watch the pomodoro sheet? How am I supposed to expect that
  *    it's doing so much?
  * 2. We're *literally* setting observables on the MobX store from here?
- *    I'm not sure that it's really necessary to keep things that way, 
+ *    I'm not sure that it's really necessary to keep things that way,
  *    but it'd be pretty great to get rid of it *quickly*
  */
 function handleLogin(onFirstFunc, onCompleteFunc, waitForOnline, onFirstScratchFunc, onCompleteScratchFunc) {
   const clientId = CLIENT_ID;
-  
+
   // FUCK, I hate when I code like this!
   _s.rawPomsheet = 'In handleLong(); about to check for access token';
 
   // Gross, but the next function will cause the page to reload
   // preventing anything that follows from loading
-  accessToken = window.accessToken = loadTokenOrLogin(clientId); 
-  
+  accessToken = window.accessToken = loadTokenOrLogin(clientId);
+
   dropbox = window.dropbox = new Dropbox.Dropbox({ accessToken, fetch });
 
   loadOrGenerateUserHash(clientId).then(hash => {
     $syncBus.setUser(hash);
     if (!window.ReadableStream || !window.Symbol) {
-      fetchAndWatchPomsheet(onCompleteFunc, waitForOnline); 
+      fetchAndWatchPomsheet(onCompleteFunc, waitForOnline);
       fetchAndWatchScratch(onCompleteScratchFunc, waitForOnline);
     } else {
       streamAndWatchPomsheet(onFirstFunc, onCompleteFunc, waitForOnline);
       streamAndWatchScratch(onFirstScratchFunc, onCompleteScratchFunc, waitForOnline);
     }
-  });  
+  });
 }
 
 function loadOrGenerateUserHash(clientId = CLIENT_ID) {
@@ -248,6 +251,9 @@ function loadOrGenerateUserHash(clientId = CLIENT_ID) {
 function fetchPomsheet(cb) {
   return downloadAndRead(POMSHEET_PATH, cb);
 }
+function fetchScratch(cb) {
+  return downloadAndRead(SCRATCH_PATH, cb);
+}
 
 function streamAndRead(onFirstFunc, onCompleteFunc, metadata, filePath = POMSHEET_PATH) {
   /*
@@ -262,8 +268,8 @@ function streamAndRead(onFirstFunc, onCompleteFunc, metadata, filePath = POMSHEE
 
    */
   console.log('called streamAndRead', metadata, filePath);
-  const hashPromise = metadata ? 
-    Promise.resolve({ content_hash: metadata.content_hash, rev: metadata.rev }) : 
+  const hashPromise = metadata ?
+    Promise.resolve({ content_hash: metadata.content_hash, rev: metadata.rev }) :
     dropbox.filesGetMetadata({ path: filePath });
   return streamPomsheet(onFirstFunc, filePath).then(text => {
     // onFirstFunc(text);
@@ -299,16 +305,30 @@ function fetchAndWatchScratch(cb, afterWatchFail) {
 }
 
 
-function checkForUpdate(lastHash, filePath = POMSHEET_PATH) {
-  return dropbox.filesGetMetadata({ path: filePath })
-     .then(({ content_hash }) => ({ isUpdated: (content_hash !== lastHash), content_hash }));
+function checkForUpdate(lastPomsheetHash, lastScratchHash, filePath = POMSHEET_PATH, scratchPath = SCRATCH_PATH) {
+  const pomsheetCheck = dropbox.filesGetMetadata({ path: filePath });
+  const scratchCheck = dropbox.filesGetMetadata({ path: scratchPath });
+  return Promise.all([pomsheetCheck, scratchCheck]).then(([pomsheet, scratch]) => {
+    return {
+      pomsheet: {
+        isUpdated: (pomsheet.content_hash !== lastPomsheetHash),
+        content_hash: pomsheet.content_hash,
+      },
+      scratch: {
+        isUpdated: (scratch.content_hash !== lastScratchHash),
+        content_hash: scratch.content_hash,
+      },
+    };
+  });
 }
 
-export default { 
-  handleLogin, 
-  fetchPomsheet, 
-  fetchAndWatchPomsheet, 
-  checkForUpdate, 
+export default {
+  handleLogin,
+  fetchPomsheet,
   streamPomsheet,
+  fetchScratch,
+  streamScratch,
+  fetchAndWatchPomsheet,
+  checkForUpdate,
   $syncBus,
 }
