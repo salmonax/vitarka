@@ -4,8 +4,10 @@ import { withRouter } from 'react-router';
 import { observable, action, computed } from 'mobx';
 
 import * as Droid from 'lib/droid';
+import time from 'lib/time';
 
 import '../main.scss';
+import './index.scss';
 
 const NBSP = '\u00A0';
 
@@ -155,7 +157,7 @@ export default class Main extends Component {
 
   get book_start() {
     if (!this.navState) {
-      // Just temporarily, until I rejigger the rest
+      // Just temporarily, until I rejigger the rest; move to queryParams!
       this.navState = { book: 'rust book' };
     }
     // TODO: repattern to obviate this:
@@ -188,7 +190,10 @@ export default class Main extends Component {
 
     // TODO: Refactor this, either with helper functions or changing model
     // const startedOn = bookData.tasks[0]
-
+    const bookDataWithStore = {
+      ...bookData,
+      common: this.props.common,
+    };
     return pug`
       .screen.start.book
         h1.center Start from Book
@@ -200,7 +205,7 @@ export default class Main extends Component {
         p Avg Rate: ${avgRate}
         // p End: 11/27/2020-12/8/2020
         // p Accuracy: Unknown
-        BookBurnDown(...bookData)
+        BookBurnDown(...bookDataWithStore)
         br
         h3 Summaries
         div(style=${{ maxHeight: 219, overflow: 'auto' }})
@@ -264,19 +269,41 @@ export default class Main extends Component {
 
 }
 
-function BookBurnDown({ goal, tasks, progToDate }) {
-  const progresses = [];
+function BookBurnDown({ goal, tasks, progToDate, pomsLeft, progPerPom, common }) {
+  const splitTasks = [];
   tasks && tasks.forEach((task, i, a) => {
     const duration = +task.duration;
-    if (duration === 1) return progresses.push(task.progress);
+    if (duration === 1) return splitTasks.push({ task, progress: task.progress });
     const lastProg = !i ? 0 :  a[i-1].progress;
     const progDelta = task.progress-lastProg;
     Array(duration).fill().forEach((_, j) => {
       const pomProg = lastProg+Math.round(progDelta/duration*(j+1));
-      progresses.push(pomProg);
+      splitTasks.push({ task, progress: pomProg });
     });
   });
+  const getColorFromTask = (splitTask) => {
+    const daysAgo = time.countDaysToDate(splitTask.task.baseDate, common._adjustedUTC);
+    switch (true) {
+      case (daysAgo === 0):
+        return '#f93f'; // orange
+      case (daysAgo >= -1):
+        return '#f3d'; // pink
+      case (daysAgo >= -7):
+        return '#b37'; // rose
+      case (daysAgo >= -30):
+        return '#75a'; // purplish
+      case (daysAgo >= -90):
+        return '#67a'; // cobalt blue
+      case (daysAgo >= -182):
+        return '#6a9'; // lighter teal
+      default:
+        return '#cba'; // beige
+    }
+
+  }
+
   if (!goal) return null;
+
   return pug`
     .chart(style=${{
       marginTop: 10,
@@ -289,23 +316,48 @@ function BookBurnDown({ goal, tasks, progToDate }) {
       display: 'flex',
     }})
       .percentage-container(style=${{
-        width: Math.floor((progToDate/goal)*100) + '%',
+        width: '100%',
+        // Uncomment following if removing the future-projected bars:
+        // width: Math.floor((progToDate/goal)*100) + '%',
         height: '100%',
         display: 'flex',
       }})
-        .bar(
-          key='start'
-          style=${{
-            display: 'flex',
-            margin: 0.5,
-            marginTop: 'auto',
-            marginBottom: 0,
-            width: '100%',
-            height: '100%',
-            background: '#f935',
-          }}
-        )
-        each progress, i in progresses
+        each singlePom, i in splitTasks
+          .bar-container(
+            key=i
+            style=${{
+              position: 'relative',
+              flexDirection: 'column',
+              display: 'flex',
+              margin: 0.5,
+              marginTop: 'auto',
+              marginBottom: 0,
+              width: '100%',
+              height: '100%',
+              justifyContent: 'flex-end',
+            }}
+            )
+            .bar(
+              style=${{
+                position: 'absolute',
+                bottom: 0,
+                width: '100%',
+                background: getColorFromTask(singlePom),
+                opacity: 0.33,
+                height: (!i ? 100 : (1 - splitTasks[i-1].progress/goal)*100) + '%',
+                background: getColorFromTask(singlePom),
+              }}
+            )
+            .bar(
+              style=${{
+                position: 'absolute',
+                bottom: 0,
+                width: '100%',
+                height: (1 - singlePom.progress/goal)*100 + '%',
+                background: getColorFromTask(singlePom),
+              }}
+            )
+        each _, i in Array(pomsLeft).fill()
           .bar(
             key=i
             style=${{
@@ -314,8 +366,8 @@ function BookBurnDown({ goal, tasks, progToDate }) {
               marginTop: 'auto',
               marginBottom: 0,
               width: '100%',
-              height: (1 - progress/goal)*100 + '%',
-              background: '#f93f',
+              height: `${(1-(splitTasks.length+i+1)*progPerPom/goal)*100}%`,
+              background: '#9995',
             }}
           )
   `;
