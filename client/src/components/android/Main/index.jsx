@@ -95,9 +95,9 @@ export default class Main extends Component {
       .map(n => n.title);
   }
 
-  pomsRemaining({ goal, pomsLeft, pomsToDate }) {
+  pomsRemaining({ goal, pomsLeft, pomsToDate, weightedPomsLeft }) {
     if (!goal) return '';
-    return pomsLeft ? pomsLeft + '/' + (pomsLeft + pomsToDate) :
+    return weightedPomsLeft ? weightedPomsLeft + '/' + (weightedPomsLeft + pomsToDate) :
     `DONE (${pomsToDate} poms)`;
   }
 
@@ -158,7 +158,7 @@ export default class Main extends Component {
   get book_start() {
     if (!this.navState) {
       // Just temporarily, until I rejigger the rest; move to queryParams!
-      this.navState = { book: 'rust book' };
+      this.navState = { book: 'progphoenix' };
     }
     // TODO: repattern to obviate this:
     const { parsleyData } = this.props.common;
@@ -269,7 +269,9 @@ export default class Main extends Component {
 
 }
 
-function BookBurnDown({ goal, tasks, progToDate, pomsLeft, progPerPom, common }) {
+function BookBurnDown({
+  goal, tasks, progToDate, pomsLeft, progPerPom, common, weightedProgPerPom, weightedPomsLeft,
+}) {
   const splitTasks = [];
   tasks && tasks.forEach((task, i, a) => {
     const duration = +task.duration;
@@ -303,6 +305,10 @@ function BookBurnDown({ goal, tasks, progToDate, pomsLeft, progPerPom, common })
   }
 
   if (!goal) return null;
+  const weightedBarHeight = (i) =>
+    `${(1-(i+1)*weightedProgPerPom/goal-(splitTasks.length*progPerPom/goal))*100}%`;
+  const normalBarHeight = (i) =>
+  `${(1-(splitTasks.length+i+1)*progPerPom/goal)*100}%`;
 
   return pug`
     .chart(style=${{
@@ -357,7 +363,7 @@ function BookBurnDown({ goal, tasks, progToDate, pomsLeft, progPerPom, common })
                 background: getColorFromTask(singlePom),
               }}
             )
-        each _, i in Array(pomsLeft).fill()
+        each _, i in Array(weightedPomsLeft).fill()
           .bar(
             key=i
             style=${{
@@ -366,7 +372,7 @@ function BookBurnDown({ goal, tasks, progToDate, pomsLeft, progPerPom, common })
               marginTop: 'auto',
               marginBottom: 0,
               width: '100%',
-              height: `${(1-(splitTasks.length+i+1)*progPerPom/goal)*100}%`,
+              height: weightedBarHeight(i),
               background: '#9995',
             }}
           )

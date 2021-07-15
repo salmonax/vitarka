@@ -752,13 +752,15 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       const progToDate = mediaItem.tasks[mediaItem.tasks.length-1].progress;
       const pomsToDate = mediaItem.tasks.reduce((acc, n) => acc+(+n.duration), 0);
       const progPerPom = progToDate/pomsToDate;
+      const pomsLeft = Math.max(0, Math.round((mediaItem.goal-progToDate)/progPerPom));
       // not on a map, so w=on't render the component
       Object.assign(mediaItem, {
         progPerPom,
         pomsToDate,
         progToDate,
-        pomsLeft: Math.round((mediaItem.goal-progToDate)/progPerPom),
+        pomsLeft,
       });
+      Object.assign(mediaItem, getExperimentalInfo(mediaItem));
     }
 
     // Add full title and author properties, if available
@@ -979,6 +981,75 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
   function isMediaAlias(line) {
     return /^[a-zA-Z0-9+'\s]+\s?->\s?[a-zA-Z0-9+'\s_,\-.:\[\]]+$/.test(line);
   }
+
+  // TODO: dumping this in here from now; pull in from another module
+  // It gets pomsLeft/progPerPom using weighted averages.
+  function getExperimentalInfo(media) {
+    return getWeightsFromBook(media);
+
+    function getWeightsFromBook(bookData) {
+       const splitTasks = getSplitTasks(bookData);//, count);
+       const slopes = getSlopes(splitTasks);
+       const deltas = deltify(slopes); // length - 1, projected forward
+       const maxDelta = Math.max.apply(null, deltas);
+       const minDelta = Math.min.apply(null,deltas);
+       const weights = deltas.map((n, i) => {
+         return n == 0 ? (1/(+splitTasks[i].task.duration))**(1/2) :
+            n < 0 ? (1-n/(minDelta*1.01)) :
+            (1-n/(maxDelta*2))**(1/2);
+       });
+       weights.push(1);
+
+       const weightSum = weights.reduce((acc, n) => acc+n, 0);
+       const weightedAverage = slopes.reduce((acc, n, i) => acc+n*weights[i], 0)/weightSum;
+
+       const { progPerPom: naiveProgPerPom, progToDate, pomsToDate, goal } = bookData;
+       const percentToDate = progToDate/goal;
+       const adjustedPercent = Math.min(1, percentToDate/0.5);
+       const metaWeighted = weightedAverage*(1-adjustedPercent) + naiveProgPerPom*adjustedPercent;
+
+       const weightedPomsLeft = Math.max(0, Math.round((goal-progToDate)/metaWeighted));
+       return {
+         weightedProgPerPom: metaWeighted,
+         weightedPomsLeft,
+       };
+    }
+
+    function getSplitTasks(data) {
+      const splitTasks = [];
+      data.tasks && data.tasks.forEach((task, i, a) => {
+        const duration = +task.duration;
+        if (duration === 1) return splitTasks.push({ task, progress: task.progress });
+        const lastProg = !i ? 0 :  a[i-1].progress;
+        const progDelta = task.progress-lastProg;
+        Array(duration).fill().forEach((_, j) => {
+          const pomProg = lastProg+Math.round(progDelta/duration*(j+1));
+          splitTasks.push({ task, progress: pomProg });
+        });
+      });
+      const naiveProgPerPom = splitTasks[splitTasks.length-1].progress/splitTasks.length;
+      return splitTasks;
+    }
+
+
+    function getSlopes(splitTasks) {
+        return splitTasks.map((n, i, a) => {
+            return !i ? n.progress : n.progress - a[i-1].progress;
+        });
+    }
+
+    function deltify(progs) {
+        const deltas = progs.map((n, i, a) => {
+            const next = a[i+1];
+            if (next === undefined) return null;
+            return next - n;
+        });
+        deltas.pop();
+        return deltas;
+    }
+  }
+
+
 }
 
 export default { PARSLEY_DEFAULTS, buildParsleyData };
