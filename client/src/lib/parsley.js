@@ -785,27 +785,14 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
 
   // VITARKA: link up the dateBucket, currently used for sheet merges
   Object.keys(dateBucket)
-    .sort((a, b) => dateBucket[b].utc - dateBucket[a].utc) // WARNING: this wasn't working before!
+    .sort((a, b) => dateBucket[a].utc - dateBucket[b].utc) // WARNING: this wasn't working before!
     .forEach((date, i, dates) => {
-      // VITARKA: as of now, this is the only place opts.partialOnly is used.
-      // Later, mergeScratch should *definitely* be disabled, just
-      // in case I get boneheaded and try to call it from there.
-      if (!dateBucket[date].endIndex && !opts.partialOnly) {
-        // For the last item, just stick it at the end of the file.
-        // WARNING: Ignores the edge case that there might be a bunch of non-date specific
-        // junk there. The only way to do this fully correctly would involve associating
-        // subsets of line types with their nearest date and checking for those types,
-        // but YAGNI for now. This whole thing is junk.
-        dateBucket[date].endIndex = parsley.lines.length-1;
-      }
-      return Object.assign(dateBucket[date], {
-        next: dateBucket[dates[i-1]],
-        prev: dateBucket[dates[i+1]],
-      });
-    });
-  Object.keys(dateBucket)
-    .sort((a, b) => dateBucket[a].utc - dateBucket[b].utc)
-    .forEach((date, i, a) => {
+      /*
+        Doing two things here:
+          1. First, handle startHours inference
+          2. Second, populate dateBucket prev/next info.
+      */
+      // 1. BEGIN startHours business
       let timeFromTasks;
       if (dateBucket[date].tasks.length) { // get the tasks
         timeFromTasks =
@@ -831,7 +818,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
         let nearestPreviousTime;
         let counter = i;
         while (!nearestPreviousTime && counter >= 0) {
-          nearestPreviousTime = parsley.startHours[a[--counter]]
+          nearestPreviousTime = parsley.startHours[dates[--counter]]
         }
         // Only runs if NO existing time!
         if (timeFromTasks !== undefined && nearestPreviousTime !== undefined) {
@@ -840,6 +827,24 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
           parsley.startHours[date] = timeFromTasks || nearestPreviousTime;
         }
       }
+
+      // 2. BEGIN dateBucket business
+      //
+      // VITARKA: as of now, this is the only place opts.partialOnly is used.
+      // Later, mergeScratch should *definitely* be disabled, just
+      // in case I get boneheaded and try to call it from there.
+      if (!dateBucket[date].endIndex && !opts.partialOnly) {
+        // For the last item, just stick it at the end of the file.
+        // WARNING: Ignores the edge case that there might be a bunch of non-date specific
+        // junk there. The only way to do this fully correctly would involve associating
+        // subsets of line types with their nearest date and checking for those types,
+        // but YAGNI for now. This whole thing is junk.
+        dateBucket[date].endIndex = parsley.lines.length-1;
+      }
+      return Object.assign(dateBucket[date], {
+        next: dateBucket[dates[i+1]],
+        prev: dateBucket[dates[i-1]],
+      });
     });
 
   return parsley;
