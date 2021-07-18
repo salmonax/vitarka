@@ -231,6 +231,8 @@ export default class Common {
   }
 
   // Returns Unix time adjusted for the practical EOD.
+  // WARNING: there's a "canonical" implementation in Parsley,
+  // but it doesn't seem to be used anywhere. Fix.
   @computed get _adjustedUTC() {
     return Date.now()-(this._dayEndHour - 24)*36e5;
   }

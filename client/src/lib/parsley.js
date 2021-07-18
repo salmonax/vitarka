@@ -97,6 +97,9 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       // 1. Compare the highest hour recorded on "yesterday"; if it's higher than
       // startHour + 20, fall back to 36.
       // 2. If the new day exists and has poms logged already, zero out the offset.
+      //
+      // UPDATE: this wasn't being used and I don't quite trust it. Why +20? Why max 36?
+      // The latest use case is the book burn down chart; it's currently ONLY used there
       return Date.now()-(Math.min(36,this.latestStartHour() + 20) - 24) * 36e5;
     },
     adjustedDateString() {
