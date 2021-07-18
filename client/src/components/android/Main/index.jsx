@@ -311,69 +311,28 @@ function BookBurnDown({
   `${(1-(splitTasks.length+i+1)*progPerPom/goal)*100}%`;
 
   return pug`
-    .chart(style=${{
-      marginTop: 10,
-      marginBottom: -10,
-      border: '1px solid black',
-      backgroundColor: '#4349',
-      width: '100%',
-      height: 100,
-      color: 'white',
-      display: 'flex',
-    }})
-      .percentage-container(style=${{
-        width: '100%',
-        // Uncomment following if removing the future-projected bars:
-        // width: Math.floor((progToDate/goal)*100) + '%',
-        height: '100%',
-        display: 'flex',
-      }})
+    .chart
+      .percentage-container
         each singlePom, i in splitTasks
-          .bar-container(
-            key=i
-            style=${{
-              position: 'relative',
-              flexDirection: 'column',
-              display: 'flex',
-              margin: 0.5,
-              marginTop: 'auto',
-              marginBottom: 0,
-              width: '100%',
-              height: '100%',
-              justifyContent: 'flex-end',
-            }}
-            )
-            .bar(
+          .bar-container(key=i)
+            .bar-top(
               style=${{
-                position: 'absolute',
-                bottom: 0,
-                width: '100%',
                 background: getColorFromTask(singlePom),
-                opacity: 0.33,
                 height: (!i ? 100 : (1 - splitTasks[i-1].progress/goal)*100) + '%',
                 background: getColorFromTask(singlePom),
               }}
             )
-            .bar(
+            .bar-body(
               style=${{
-                position: 'absolute',
-                bottom: 0,
-                width: '100%',
                 height: (1 - singlePom.progress/goal)*100 + '%',
                 background: getColorFromTask(singlePom),
               }}
             )
         each _, i in Array(weightedPomsLeft).fill()
-          .bar(
+          .bar-forecast(
             key=i
             style=${{
-              display: 'flex',
-              margin: 0.5,
-              marginTop: 'auto',
-              marginBottom: 0,
-              width: '100%',
               height: weightedBarHeight(i),
-              background: '#9995',
             }}
           )
   `;

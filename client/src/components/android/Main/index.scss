@@ -1,0 +1,50 @@
+.chart {
+  & {
+    margin-top: 10px;
+    margin-bottom: -10px;
+    border: 1px solid black;
+    background-color: #4349;
+    width: 100%;
+    height: 100px;
+    color: white;
+    display: flex;
+  }
+  .percentage-container {
+    & {
+      width: 100%;
+      height: 100%;
+      display: flex;
+    }
+    .bar-container {
+      & {
+        position: relative;
+        flex-direction: column;
+        display: flex;
+        margin: 0.5px;
+        margin-top: auto;
+        margin-bottom: 0px;
+        width: 100%;
+        height: 100%;
+        justify-content: flex-end;
+      }
+      .bar-top, .bar-body {
+        position: absolute;
+        bottom: 0px;
+        width: 100%;
+      }
+      .bar-top {
+        opacity: 0.33;
+      }
+    }
+    .bar-forecast {
+      display: flex;
+      margin: 0.5px;
+      margin-top: auto;
+      margin-bottom: 0px;
+      width: 100%;
+      background: #9995;
+    }
+
+  }
+
+}
