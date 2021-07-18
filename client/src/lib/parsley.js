@@ -61,6 +61,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
     dateBucket,
     linebreak: RegExp.$1,
     lines: lines,
+    lastUTC: null,
     tasks: [],
     tags: {},
     stats: {},
@@ -840,6 +841,9 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
         // subsets of line types with their nearest date and checking for those types,
         // but YAGNI for now. This whole thing is junk.
         dateBucket[date].endIndex = parsley.lines.length-1;
+      }
+      if (!dates[i+1]) {
+        parsley.lastUTC = dateBucket[date].utc;
       }
       return Object.assign(dateBucket[date], {
         next: dateBucket[dates[i+1]],

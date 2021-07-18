@@ -284,7 +284,7 @@ function BookBurnDown({
     });
   });
   const getColorFromTask = (splitTask) => {
-    const daysAgo = time.countDaysToDate(splitTask.task.baseDate, common.parsleyData.adjustedUTC());
+    const daysAgo = time.countDaysToDate(splitTask.task.baseDate, common.parsleyData.lastUTC);
     switch (true) {
       case (daysAgo === 0):
         return '#f93f'; // orange
