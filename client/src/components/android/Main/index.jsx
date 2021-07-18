@@ -173,7 +173,7 @@ export default class Main extends Component {
       const { progUnit } = bookData;
       const progressLabel = progUnit === 'percentage' ? '%' : ` of ${bookData.goal} pages`;
       progress = bookData.tasks[bookData.tasks.length - 1].progress + progressLabel;
-      avgRate = bookData.progPerPom.toFixed(1) + (bookData.progUnit === 'percentage' ? '%' : ' pages') + ' per pom';
+      avgRate = bookData.weightedProgPerPom.toFixed(1) + (bookData.progUnit === 'percentage' ? '%' : ' pages') + ' per pom';
       summaries = bookData.tasks.map((n, i, a) => {
         const lastProgress = i ? a[i - 1].progress : 0;
         const progress =
@@ -202,7 +202,7 @@ export default class Main extends Component {
         p Started On: ${startedOn}
         p Progress: ${progress}
         p Poms Left: ${pomsRemaining}
-        p Avg Rate: ${avgRate}
+        p Est Rate: ${avgRate}
         // p End: 11/27/2020-12/8/2020
         // p Accuracy: Unknown
         BookBurnDown(...bookDataWithStore)
