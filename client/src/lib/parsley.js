@@ -664,7 +664,12 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
     if (isCommentStartHour(line)) {
       var startHour = parseCommentStartHour(line);
       if (currentDate && !isNaN(startHour)) {
-        parsley.startHours[currentDate] = startHour;
+        // VITARKA EXPERIMENTAL: Take into account that mergeScratch will append
+        // commentStartHour lines to the end of the file; always use the MINIMUM
+        // one!
+        parsley.startHours[currentDate] = parsley.startHours[currentDate] !== undefined ?
+          Math.min(parsley.startHours[currentDate], startHour) :
+          startHour;
       }
       continue;
     }
@@ -780,24 +785,62 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
 
   // VITARKA: link up the dateBucket, currently used for sheet merges
   Object.keys(dateBucket)
-  .sort((a, b) => b.utc - a.utc)
-  .forEach((date, i, dates) => {
-    // VITARKA: as of now, this is the only place opts.partialOnly is used.
-    // Later, mergeScratch should *definitely* be disabled, just
-    // in case I get boneheaded and try to call it from there.
-    if (!dateBucket[date].endIndex && !opts.partialOnly) {
-      // For the last item, just stick it at the end of the file.
-      // WARNING: Ignores the edge case that there might be a bunch of non-date specific
-      // junk there. The only way to do this fully correctly would involve associating
-      // subsets of line types with their nearest date and checking for those types,
-      // but YAGNI for now. This whole thing is junk.
-      dateBucket[date].endIndex = parsley.lines.length-1;
-    }
-    return Object.assign(dateBucket[date], {
-      next: dateBucket[dates[i-1]],
-      prev: dateBucket[dates[i+1]],
+    .sort((a, b) => dateBucket[b].utc - dateBucket[a].utc) // WARNING: this wasn't working before!
+    .forEach((date, i, dates) => {
+      // VITARKA: as of now, this is the only place opts.partialOnly is used.
+      // Later, mergeScratch should *definitely* be disabled, just
+      // in case I get boneheaded and try to call it from there.
+      if (!dateBucket[date].endIndex && !opts.partialOnly) {
+        // For the last item, just stick it at the end of the file.
+        // WARNING: Ignores the edge case that there might be a bunch of non-date specific
+        // junk there. The only way to do this fully correctly would involve associating
+        // subsets of line types with their nearest date and checking for those types,
+        // but YAGNI for now. This whole thing is junk.
+        dateBucket[date].endIndex = parsley.lines.length-1;
+      }
+      return Object.assign(dateBucket[date], {
+        next: dateBucket[dates[i-1]],
+        prev: dateBucket[dates[i+1]],
+      });
     });
-  });
+  Object.keys(dateBucket)
+    .sort((a, b) => dateBucket[a].utc - dateBucket[b].utc)
+    .forEach((date, i, a) => {
+      let timeFromTasks;
+      if (dateBucket[date].tasks.length) { // get the tasks
+        timeFromTasks =
+          Math.floor(Math.min.apply(null, dateBucket[date].tasks.map(n => +n.time - n.duration/2)));
+      }
+      // IMPORTANT ASSUMPTION: both sheets have already been processed, so if this is empty,
+      // no user-specified startHour exists for that date.
+      const userSpecifiedTime = parsley.startHours[date];
+      if (userSpecifiedTime !== undefined) {
+        if (timeFromTasks !== undefined) {
+          // Override even a user-specified date if an earlier task exists.
+          // This fixes a long-standing potential bug.
+          parsley.startHours[date] = Math.min(userSpecifiedTime, timeFromTasks);
+        }
+      } else {
+        // No startHour exists, so make inferences:
+        // 1. Get the nearestPreviousTime
+        // 2. If both that and timeFromTasks exists, take the smallest. This is because
+        //  there's no guarantee that the day started right before the first pomodoro;
+        //  it's very often NOT the case. This assumption is canonized from Bindu.
+        // 3. If they don't both exist, assign to timeFromTasks || nearestPrevious time;
+        //   if they are both empty, it's fine, and DEFAULTS.startHour will end up used.
+        let nearestPreviousTime;
+        let counter = i;
+        while (!nearestPreviousTime && counter >= 0) {
+          nearestPreviousTime = parsley.startHours[a[--counter]]
+        }
+        // Only runs if NO existing time!
+        if (timeFromTasks !== undefined && nearestPreviousTime !== undefined) {
+          parsley.startHours[date] = Math.min(nearestPreviousTime, timeFromTasks);
+        } else {
+          parsley.startHours[date] = timeFromTasks || nearestPreviousTime;
+        }
+      }
+    });
 
   return parsley;
 
