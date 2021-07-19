@@ -180,7 +180,7 @@ export default class Common {
       // On any subsequent pomsheet loads where the scratch sheet has already loaded,
       // build parsleyData out of a merged sheet rather than the raw data
       const { rawScratch, parsleyData } = this;
-      const { updatedPomsheet } = parsleyData.mergeScratch(
+      const { updatedPomsheet } = ParsleyService.mergeScratch(
         rawScratch,
         // always merge into an unmerged parsleyData object:
         ParsleyService.buildParsleyData(result.file),
@@ -202,13 +202,12 @@ export default class Common {
       console.log('Has not loaded once, or no rawScratch exists');
     }
 
-    // console.error('ABOUT TO SET LASTPOMSHEETHASH:', caller, result === this.lastPomsheetResult);
     this._lastPomsheetHash = result.content_hash;
     this.pomsToday = this.pomsDaysAgo(0);
     this.diegesis = this.getDiegesis();
     this.pomsheetHasLoadedResolve();
     this.runParsleyCallbacks(this.parsleyData);
-    // this.parsleyData.mergeScratch(window.scratch);
+
     console.log('updated pomsheet. elapsed:', Date.now() - _updateStart + 'ms');
     return this.parsleyData;
   }
