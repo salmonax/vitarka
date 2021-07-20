@@ -62,7 +62,11 @@ const config = {
       {
         test: /\.svg$/,
         loader: 'raw-loader'
-      }
+      },
+      {
+        test: /\.worker\.js$/,
+        use: { loader: 'worker-loader' },
+      },
     ]
   },
   plugins: [
