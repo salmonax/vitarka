@@ -12,6 +12,8 @@
   to a worker process.
 */
 import mergeScratch from './mergeScratch'; // will be re-exported.
+import mergeScratchAsync from './mergeScratch.spawn';
+import { monthName, parseCommentStartHour, parseTask } from './parsley.shared';
 
 const PARSLEY_DEFAULTS = {
   dayTarget: 16,
@@ -208,7 +210,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
         endIndex: null,
       };
     } else if (isTask(line)) {
-      var task = parseTask(line,i);
+      var task = parseTask(line, i, currentDate, parsley);
       parsley.tasks.push(task);
       parsley.dateBucket[currentDate].tasks.push(task);
       updateStats(task);
@@ -359,140 +361,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       parsley.stats[key][value] += parseInt(task.duration);
     });
   }
-  function parseCommentStartHour(line) {
-    return +line.replace('#', '').split(':')[0].trim();
-  }
 
-  function parseTask(line, index, _currentDate = currentDate) {
-    var date,
-        time,
-        tag,
-        category,
-        subcategory,
-        description,
-        duration,
-        //NOTE: might cause problem with filters
-        media =  null,
-        progress = null,
-        progUnit = false;
-
-    var split = line.split(/\s+|\t+/);
-    time = split[0];
-    duration = split[split.length-1].replace(/[^Xx]/g,'').length; // Dear preivous self: WAT?
-
-    tag = checkTag(split[1]);
-    var middle = split.slice((tag?2:1),split.length-1).join(' ').split(':');
-    tag = tag || "None";
-    //TODO: uh oh... it's splitting the date for every task?!
-    var splitDate = _currentDate.split('/'),
-        year = splitDate[2],
-        month = splitDate[0],
-        day = splitDate[1];
-
-    var splitEndHour = time.split('.'),
-        endHours = splitEndHour[0],
-        endMinutes = splitEndHour[1] ? "30":"00";
-
-    var startHour = (parseFloat(time)-(0.5)*parseInt(duration)).toString(),
-        splitStartHour = startHour.split('.'),
-        startHours = splitStartHour[0],
-        startMinutes = splitStartHour[1] ? "30":"00";
-
-    var endDate = new Date(year, parseInt(month)-1, day, endHours, endMinutes);
-
-    var startDate = new Date(year, parseInt(month)-1, day, startHours,startMinutes);
-    /* baseDate is the date marked in the pomsheet, without time info */
-    var baseDate = new Date(year,parseInt(month)-1,day);
-    baseDate.setHours(0,0,0,0);
-
-    if (middle.length >= 2) {
-      var categories = middle[0].split(/,\s?/);
-      category = parseRocket(categories[0].trim());
-      subcategory = categories[1] ? parseRocket(categories[1].trim()) : "None";
-      description = middle.slice(1,middle.length).join(' ').trim();
-    } else {
-      category = subcategory = "None";
-      description = middle.join(' ').trim();
-    }
-    description = parseRocket(description);
-    //make sure to lose the toString() business on refactor
-    //... that is, if you can even figure out why they're there to begin with.
-    return {
-      //lineIndex; rename.
-      index: index,
-      time: time,
-      date: _currentDate,
-      startDate: startDate,
-      endDate: endDate,
-      baseDate: baseDate,
-      category: category,
-      subcategory: subcategory,
-      tag: tag,
-      description: description,
-      duration: duration.toString(),
-      year: endDate.getFullYear().toString(),
-      month: monthName(endDate.getMonth()),
-      week: weekNum(endDate.getDate()),
-      media: media,
-      // TODO: maybe progress should go in media? Would be a breaking change, though
-      progress: progress,
-    }
-
-    function checkTag(maybeTag) {
-      var definedTags = Object.keys(parsley.tags).join('');
-      //this regex is pretty good, but doesn't limit non-consecutive occurrences
-      //eg. "EErrEE" would be a false positive.
-      var isTag = RegExp("^((["+definedTags+"])\\2?(?!\\2))+$").test(maybeTag);
-      return isTag ? maybeTag : null;
-    }
-
-    //Something fishy is going on here...
-    function parseRocket(text) {
-      if (text && text.indexOf("=>") == -1 && text.indexOf("->") == -1) {
-        return text;
-      }
-      if (text) {
-        var type = text.indexOf("=>") > -1 ? "output" : "input";
-        var set = text.split(/\s?[-=]>/);
-        var item = set[0];
-        var value = set[1];
-        var pages = value.split(',')[0].split('/')[1];
-        var goal;
-        if (value.indexOf("%") != -1) {
-          goal = 100
-          progUnit = 'percentage';
-        } else if (pages) {
-          goal = +pages;
-          progUnit = 'pages';
-        }
-        parsley.media[item] = parsley.media[item] || {}
-        if (goal) { parsley.media[item]["goal"] = goal }
-        media = item;
-        // VITARKA: Add progUnit here, I guess; yeesh!
-        parsley.media[item].progUnit = progUnit;
-        parsley.media[item].title = item; // Hmm... the abbrevs aren't *actually* titles, but leaving for now
-        progress = parseInt(value);
-        //TODO: remove rocket and value, but preserve description
-        return text;
-      }
-      return text;
-    }
-  }
-
-
-  //TODO: This might be more useful as an actual number.
-  //(The only reason it's like this was for the filter browser.)
-  //TODO: start using utils.weekNum?
-  function weekNum(day) {
-    var bracket = Math.floor((day-1)/7);
-    // p(day + " is Week " + (bracket+1));
-    return bracket < 4 ? "Week " + (bracket+1) :"Week Burst";
-  }
-
-  function monthName(index) {
-    return "January February March April May June July August September October November December".split(' ')[index];
-
-  }
   function isTagDefinition(line) {
     return /^[^\d]{1}\s.*/.test(line);
   }
@@ -603,4 +472,4 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
   }
 }
 
-export default { PARSLEY_DEFAULTS, buildParsleyData, mergeScratch };
+export default { PARSLEY_DEFAULTS, buildParsleyData, mergeScratch, mergeScratchAsync };

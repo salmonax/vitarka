@@ -160,7 +160,7 @@ export default class Common {
   // These functions are misnamed; this should be "receivedPomsheet" as
   // it doesn't actually take any sort of callback.
   // It's called in several contexts, but always when the pomsheet is done loading.
-  @action.bound onPomsheetUpdate(result = this.lastPomsheetResult, caller) {
+  @action.bound async onPomsheetUpdate(result = this.lastPomsheetResult, caller) {
     console.error('CALLED UPDATE')
     // 2020: Sigh, tech debt; this makes rawPomsheet and _lastPomsheetHash redundant
     this._oldPomsheetResult = this.lastPomsheetResult; // why?!
@@ -180,7 +180,7 @@ export default class Common {
       // On any subsequent pomsheet loads where the scratch sheet has already loaded,
       // build parsleyData out of a merged sheet rather than the raw data
       const { rawScratch, parsleyData } = this;
-      const { updatedPomsheet } = ParsleyService.mergeScratch(
+      const { updatedPomsheet } = await ParsleyService[window.Worker ? 'mergeScratchAsync' : 'mergeScratch'](
         rawScratch,
         // always merge into an unmerged parsleyData object:
         ParsleyService.buildParsleyData(result.file),
