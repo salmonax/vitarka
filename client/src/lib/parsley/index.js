@@ -203,7 +203,9 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       dateBucket[currentDate] = {
         text: currentDate,
         index: i,
-        tasks: [],
+        // UPDATE 2021: adding the next line so that task-based startHours inference works correctly
+        // for startHourPostfix items. It does NOT address the issue in the comment above!
+        tasks: dateBucket[currentDate] ? dateBucket[currentDate].tasks : [],
         next: null,
         prev: null,
         utc: Date.parse(line),
