@@ -1,4 +1,4 @@
-const PubNub = window.PubNub; // Sorry everybody! 
+const PubNub = window.PubNub; // Sorry everybody!
 
 const publishKey = process.env.PN_PUB;
 const subscribeKey = process.env.PN_SUB;
@@ -16,7 +16,7 @@ client.addListener({
   }
 });
 
-let toStamp = (token) => Math.ceil(token/10000); 
+let toStamp = (token) => Math.ceil(token/10000);
 // This function returns a version of the current time
 // with an offset calibrated to PubNub's timestamp, for
 // near perfect synchronization between machines
@@ -76,11 +76,11 @@ const clientWrapper = window.stateBus = {
     // Note: this is running before onReady;
     // any streams should be assembled *within*
     // onReady, allowing $stateBus.now() to be synchronous
-    // 
+    //
     // If you're reading this, the exception is $SyncBus.load().
     // which should probably be forced to only resolve in onReady,
     // independent of what the caller does.
-    
+
     console.log(typeof _getServerTimeDelta())
     _getServerTimeDelta().then(serverTimeDelta => {
       _serverTimeDelta = serverTimeDelta;
@@ -88,9 +88,9 @@ const clientWrapper = window.stateBus = {
     });
   },
   load(applyFunc) {
-    console.log('what the fuck! TRYING TO LOAD')
+    // console.log('what the fuck! TRYING TO LOAD')
     if (!_userHash) throw new Error('Must set user with setUser!')
-    client.history({ 
+    client.history({
       channel: _userHash,
       count: 1
     }, (_, res) => {
@@ -101,7 +101,7 @@ const clientWrapper = window.stateBus = {
         }
         const { timetoken, entry: { state } } = res.messages[0];
         const timestamp = toStamp(timetoken);
-        applyFunc({ state, timestamp }); 
+        applyFunc({ state, timestamp });
       }
     });
   },
