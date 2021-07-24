@@ -619,7 +619,7 @@ export default class Common {
   getDiegesis() {
     if (!this.parsleyData) return {};
     // WARNING: CHANGE THIS
-    const adjustedNow = this._adjustedUTC;
+    const adjustedNow = Math.max(this._adjustedUTC, this.parsleyData.lastUTC);
     const startHour = this.parsleyData.startHour(adjustedNow);
     return TurnipService.getDiegesis(startHour, this._dayEndHour, adjustedNow);
   }
