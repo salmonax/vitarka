@@ -269,7 +269,7 @@ export default class Main extends Component {
               .pom-container(
                   key=${Math.random()}
                   style=${{
-                    background: '#4349',
+                    background: pomCount === doneIn ? '#9497' : '#4349',
                     border: '1px solid black',
                     margin: 8,
                     padding: 7,

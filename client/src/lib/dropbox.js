@@ -133,7 +133,6 @@ function downloadAndRead(pomsheetPath, handleResult = oldReadFunc) {
   })
 }
 
-let lastContentHash = null;
 function watchForChanges(path, runner, afterWatchFail, filePath = POMSHEET_PATH) {
   return dropbox.filesListFolder({ path })
   .then(({ cursor }) => {
@@ -214,7 +213,12 @@ let dropbox, accessToken;
  *    I'm not sure that it's really necessary to keep things that way,
  *    but it'd be pretty great to get rid of it *quickly*
  */
-function handleLogin(onFirstFunc, onCompleteFunc, waitForOnline, onFirstScratchFunc, onCompleteScratchFunc) {
+function handleLogin({
+  onLogin = () => {},
+  onFirstPomsheetChunk, onPomsheetComplete,
+  onFirstScratchChunk, onScratchComplete,
+  onNetworkFail,
+ }) {
   const clientId = CLIENT_ID;
 
   // FUCK, I hate when I code like this!
@@ -225,15 +229,15 @@ function handleLogin(onFirstFunc, onCompleteFunc, waitForOnline, onFirstScratchF
   accessToken = window.accessToken = loadTokenOrLogin(clientId);
 
   dropbox = window.dropbox = new Dropbox.Dropbox({ accessToken, fetch });
-
   loadOrGenerateUserHash(clientId).then(hash => {
+    onLogin(hash);
     $syncBus.setUser(hash);
     if (!window.ReadableStream || !window.Symbol) {
-      fetchAndWatchPomsheet(onCompleteFunc, waitForOnline);
-      fetchAndWatchScratch(onCompleteScratchFunc, waitForOnline);
+      fetchAndWatchPomsheet(onPomsheetComplete, onNetworkFail);
+      fetchAndWatchScratch(onScratchComplete, onNetworkFail);
     } else {
-      streamAndWatchPomsheet(onFirstFunc, onCompleteFunc, waitForOnline);
-      streamAndWatchScratch(onFirstScratchFunc, onCompleteScratchFunc, waitForOnline);
+      streamAndWatchPomsheet(onFirstPomsheetChunk, onPomsheetComplete, onNetworkFail);
+      streamAndWatchScratch(onFirstScratchChunk, onScratchComplete, onNetworkFail);
     }
   });
 }

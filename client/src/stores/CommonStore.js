@@ -24,6 +24,7 @@ window.t = TurnipService
  */
 
 export default class Common {
+  userHash = null;
   pomsheetHasLoadedResolve = null;
   pomsheetHasLoaded = new Promise((r, j) => {
     this.pomsheetHasLoadedResolve = r;
@@ -60,21 +61,35 @@ export default class Common {
       this.rawPomsheet = 'made it to try block';
       // Might want to do a catch condition here
       // No, this thing is fucking horrible.. Goddamnit
-      DropboxService.handleLogin(
-        // Do this when the first chunk loads
-        this.onFirstPomsheetChunk,
+      DropboxService.handleLogin({
+        onLogin: userHash => {
+          this.userHash = userHash;
+          // TODO: should save the content_hashes for both pomsheet and scratch and prevent
+          // any further load if they're both the same. Later, add more sophisticated
+          // content_hash checking when performing a streamed read.
+          const userPomsheetKey = `__vitarka_cache__/${this.userHash}/mergedSheet`;
+          // TODO: ignoring userHash for now and just dumping the merged pomsheet in localStorage.
+          // Should use IndexedDB instead, and look sheet up based on current logged in user.
+          const maybeExistingSheet = localStorage.getItem(userPomsheetKey);
+          if (maybeExistingSheet) {
+            this.onPomsheetUpdate({
+              merged: true,
+              content_hash: 'cached', // NOTE: this prevent out-of-order error in onPomsheetUpdate
+              file: maybeExistingSheet,
+            }, 'loginAndParsley_localStorage');
+          }
+        },
+        onFirstPomsheetChunk: this.onFirstPomsheetChunk,
         // Do this when the whole sheet has loaded... Just an ugly way to make it a Promise
-        result => {
+        onPomsheetComplete: result => {
           // the strings are just for debugging outputs
+          // 2021: this doesn't seem to be used. Why is it here?
           _resolve(this.onPomsheetUpdate(result, 'loginAndParsley'), 'loginAndParsley');
         },
-        // Do this when things fail.
-        _ => this.startNetworkHeartbeat(),
-        // Sigh.. just monkeypatching scratch-handling into here
-        this.onFirstScratchChunk,
-        this.onScratchUpdate,
-
-      );
+        onFirstScratchChunk: this.onFirstScratchChunk,
+        onScratchComplete: this.onScratchUpdate,
+        onNetworkFail: _ => this.startNetworkHeartbeat(),
+      });
     } catch (err) {
       this.rawPomsheet = 'everything fucked up' + err;
     }
@@ -149,11 +164,12 @@ export default class Common {
 
 
   @action.bound onFirstPomsheetChunk(text) {
-    this.updatedOnFocus = 'I did it! ' + Date.now();
-    console.log('called onFirstPomsheetChunk');
-    const partialParsleyData = ParsleyService.buildParsleyData(text, { partialOnly: true });
-    this.parsleyData = partialParsleyData;
-    this.pomsToday = this.pomsDaysAgo(0, partialParsleyData);
+    this.updatedOnFocus = 'I did it! ' + Date.now(); // ???
+    if ((!this.lastPomsheetResult || !this.lastPomsheetResult.merged) && !this.rawScratch) {
+      const partialParsleyData = ParsleyService.buildParsleyData(text, { partialOnly: true });
+      this.parsleyData = partialParsleyData;
+      this.pomsToday = this.pomsDaysAgo(0, partialParsleyData);
+    }
     this.diegesis = this.getDiegesis();
   }
 
@@ -161,7 +177,10 @@ export default class Common {
   // it doesn't actually take any sort of callback.
   // It's called in several contexts, but always when the pomsheet is done loading.
   @action.bound async onPomsheetUpdate(result = this.lastPomsheetResult, caller) {
-    console.error('CALLED UPDATE')
+    console.error('@@@@@@@@@@@@@@@@@@@@ CALLED UPDATE', caller);
+    // if (caller === 'loginAndParsley') {
+      console.warn('ERRR: ',!!this.rawScratch, this.hasPomsheetLoadedOnce);
+    // }
     // 2020: Sigh, tech debt; this makes rawPomsheet and _lastPomsheetHash redundant
     this._oldPomsheetResult = this.lastPomsheetResult; // why?!
     this.lastPomsheetResult = result;
@@ -176,24 +195,35 @@ export default class Common {
       return;
     }
 
+    // 2021: oh god, this logic needs to be killed with fire.
+    // TODO: split CommonStore into pieces, rewrite pomsheet update logic!
     if (this.hasPomsheetLoadedOnce && this.rawScratch) {
-      // On any subsequent pomsheet loads where the scratch sheet has already loaded,
-      // build parsleyData out of a merged sheet rather than the raw data
-      const { rawScratch, parsleyData } = this;
-      const { updatedPomsheet } = await ParsleyService[window.Worker ? 'mergeScratchAsync' : 'mergeScratch'](
-        rawScratch,
-        // always merge into an unmerged parsleyData object:
-        ParsleyService.buildParsleyData(result.file),
-      );
-      // TODO: mergeScratch should probably look more look like this:
-      //const { updatedPomsheet } = ParsleyService.mergeScratch(rawScratch, parsleyData);
+      if (caller === 'onScratchUpdate' || !this._oldPomsheetResult.merged) {
+        // On any subsequent pomsheet loads where the scratch sheet has already loaded,
+        // build parsleyData out of a merged sheet rather than the raw data
+        const { rawScratch, parsleyData } = this;
+        console.warn('ABOUT TO CALL MERGE SCRATCH', caller);
+        const { updatedPomsheet } = await ParsleyService[window.Worker ? 'mergeScratchAsync' : 'mergeScratch'](
+          rawScratch,
+          // always merge into an unmerged parsleyData object:
+          ParsleyService.buildParsleyData(result.file),
+        );
+        // Unconditionally merge updatedPomsheet to localStorage:
+        window.localStorage.setItem(
+          `__vitarka_cache__/${this.userHash}/mergedSheet`,
+          updatedPomsheet,
+        );
 
-      // Only rebuild the parsley data if the merged raw pomsheet has changed:
-      if (this.rawPomsheet !== updatedPomsheet) {
-        this.rawPomsheet = updatedPomsheet;
-        this.parsleyData =  ParsleyService.buildParsleyData(updatedPomsheet);
-      } else {
-        console.warn('onPomsheetUpdate: skipped parsleyData rebuild because merged sheet unchanged');
+        // TODO: mergeScratch should probably look more look like this:
+        //const { updatedPomsheet } = ParsleyService.mergeScratch(rawScratch, parsleyData);
+
+        // Only rebuild the parsley data if the merged raw pomsheet has changed:
+        if (this.rawPomsheet !== updatedPomsheet) {
+          this.rawPomsheet = updatedPomsheet;
+          this.parsleyData =  ParsleyService.buildParsleyData(updatedPomsheet);
+        } else {
+          console.warn('onPomsheetUpdate: skipped parsleyData rebuild because merged sheet unchanged');
+        }
       }
     } else {
       const rawPomsheet = result.file; // should maybe be result.text
@@ -216,6 +246,7 @@ export default class Common {
   }
 
   @action.bound onFirstScratchChunk(text) {
+    console.warn('##### CALLED ON FIRST SCRATCH CHUNK');
     // This doesn't do anything yet
   }
 
