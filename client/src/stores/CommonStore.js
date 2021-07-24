@@ -101,50 +101,50 @@ export default class Common {
   @action checkAndUpdatePomsheet() {
     // This method runs the on-focus check. It should check BOTH the scratch sheet and the pomsheet
     // and then act appropriately.
-    const lastScratchHash = this.lastScratchResult.content_hash
-    console.error(lastScratchHash);
-    return DropboxService.checkForUpdate(this._lastPomsheetHash, lastScratchHash).then(({ pomsheet, scratch }) => {
-      if (pomsheet.isUpdated || scratch.isUpdated) {
-        this.updatedOnFocus = true;
-        let fetchPomsheet = _ => Promise.resolve();
-        let fetchScratch  = fetchPomsheet;
-        if (pomsheet.isUpdated) {
-          if (!window.ReadableStream) {
-            fetchPomsheet = _ => DropboxService.fetchPomsheet(this.onPomsheetUpdate);
-          } else {
-            fetchPomsheet = _ => DropboxService.streamPomsheet(this.onFirstPomsheetChunk)
-              .then(text => this.onPomsheetUpdate(
-                { file: text, content_hash: pomsheet.content_hash },
-                'checkAndUpdatePomsheet',
-              ));
+    const lastScratchHash = this.lastScratchResult.content_hash;
+    return DropboxService.checkForUpdate(this._lastPomsheetHash, lastScratchHash)
+      .then(({ pomsheet, scratch }) => {
+        if (pomsheet.isUpdated || scratch.isUpdated) {
+          this.updatedOnFocus = true;
+          let fetchPomsheet = _ => Promise.resolve();
+          let fetchScratch = fetchPomsheet;
+          if (pomsheet.isUpdated) {
+            if (!window.ReadableStream) {
+              fetchPomsheet = _ => DropboxService.fetchPomsheet(this.onPomsheetUpdate);
+            } else {
+              fetchPomsheet = _ => DropboxService.streamPomsheet(this.onFirstPomsheetChunk)
+                .then(text => this.onPomsheetUpdate(
+                  { file: text, content_hash: pomsheet.content_hash },
+                  'checkAndUpdatePomsheet',
+                ));
+            }
           }
-        }
-        if (scratch.isUpdated) {
-          if (!window.ReadableStream) {
-            fetchScratch = _ => DropboxService.fetchScratch(this.onScratchUpdate);
-          } else {
-            fetchScratch = _ => DropboxService.streamScratch(this.onFirstScratchChunk)
-              .then(text => this.onScratchUpdate(
-                { file: text, content_hash: scratch.content_hash },
-              ));
+          if (scratch.isUpdated) {
+            if (!window.ReadableStream) {
+              fetchScratch = _ => DropboxService.fetchScratch(this.onScratchUpdate);
+            } else {
+              fetchScratch = _ => DropboxService.streamScratch(this.onFirstScratchChunk)
+                .then(text => this.onScratchUpdate(
+                  { file: text, content_hash: scratch.content_hash },
+                ));
+            }
           }
+          // Fetch in order. This will make the following (quick-and-dirty, suboptimal) thing happen:
+          // 1. If there's a pomsheet update, it'll fetch it and run onPomsheetUpdate, otherwise nothing
+          // 2. If there's a scratch sheet update, it'll pull the scratch and run onPomsheetUpdate *again*, otherwise nothing.
+          // 3. If neither have changed, it'll use the current data.
+          return fetchPomsheet().then(fetchScratch);
         }
-        // Fetch in order. This will make the following (quick-and-dirty, suboptimal) thing happen:
-        // 1. If there's a pomsheet update, it'll fetch it and run onPomsheetUpdate, otherwise nothing
-        // 2. If there's a scratch sheet update, it'll pull the scratch and run onPomsheetUpdate *again*, otherwise nothing.
-        // 3. If neither have changed, it'l
-        return fetchPomsheet().then(fetchScratch);
-      }
 
-      this.updatedOnFocus = false
-      console.warn('Pomsheet checked, but no change in either pomsheet or scratch; skipping onPomsheetUpdate');
-      // NOTE: I think that checking the scratch sheet hash obviates the onPomsheetUpdate() call.
-      // console.warn('Pomsheet checked, but no change; skipping, but calling onPomsheetUpdate anyway.');
-      // WARNING: TEMPORARY KLUDGE
-      // Run onPomsheetUpdate anyway to force a re-merge with scratch on focus.
-      // Note: it will use this.lastPomsheetResult and assume it is NOT being called for a scratch sheet update
-      // this.onPomsheetUpdate();
-    });
+        this.updatedOnFocus = false
+        console.warn('Pomsheet checked, but no change in either pomsheet or scratch; skipping onPomsheetUpdate');
+        // NOTE: I think that checking the scratch sheet hash obviates the onPomsheetUpdate() call.
+        // console.warn('Pomsheet checked, but no change; skipping, but calling onPomsheetUpdate anyway.');
+        // WARNING: TEMPORARY KLUDGE
+        // Run onPomsheetUpdate anyway to force a re-merge with scratch on focus.
+        // Note: it will use this.lastPomsheetResult and assume it is NOT being called for a scratch sheet update
+        // this.onPomsheetUpdate();
+      });
   }
 
 
