@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { inject, observer } from 'mobx-react';
 import { withRouter } from 'react-router';
 import { observable, action, computed } from 'mobx';
+import queryString from 'query-string';
 
 import * as Droid from 'lib/droid';
 import time from 'lib/time';
@@ -37,7 +38,7 @@ const NotificationSettings = props => pug`
 @withRouter @inject('common') @observer
 export default class Main extends Component {
   @observable path = 'main'
-  @observable navState = null
+  @observable navState = {}
   @observable books = `
     Pro TypeScript
     Effective TypeScript
@@ -57,13 +58,11 @@ export default class Main extends Component {
     window.history.pushState(undefined, undefined, path);
   }
 
-  @action.bound loadPath(path = window.location.pathname, navState) {
-    path = path.substr(1);
-    if (!this[path]) path = 'main';
-    this.path = path;
-    if (navState) {
-      this.navState = navState;
-    }
+  @action.bound loadPath(path = window.location.pathname, navState, search = window.location.search) {
+    let strippedPath = path.substr(1).split('?')[0];
+    if (!this[strippedPath]) strippedPath = 'main';
+    this.path = strippedPath;
+    this.navState = Object.assign({}, navState, queryString.parse(search));
   }
 
   componentDidMount() {
@@ -165,7 +164,7 @@ export default class Main extends Component {
                 borderBottom: 'unset',
                 background: colorFromBook(media[book]),
               }
-              onClick=${e => media[book].goal && this.navTo(`/book_start`, { book })}
+              onClick=${e => media[book].goal && this.navTo(`/book_start?book=${book}`, { book })}
             )
               h4(
                 key=book
@@ -192,8 +191,9 @@ export default class Main extends Component {
   }
 
   get book_start() {
-    if (!this.navState) {
-      // Just temporarily, until I rejigger the rest; move to queryParams!
+    if (!this.navState.book) {
+      // This will only trigger if the page is loaded without query parameters
+      // Move to a fallback constant or redirect to Main.
       this.navState = { book: 'staffeng' };
     }
     // TODO: repattern to obviate this:
@@ -277,8 +277,7 @@ export default class Main extends Component {
                 .pom ${pomCount}
           .rows
             h1(
-              onClick=${e => this.navTo('/book_running')
-      }
+              onClick=${e => this.navTo('/book_running')}
             ) Start
     `;
   }
@@ -311,7 +310,6 @@ export default class Main extends Component {
         p Elapsed: 110 minutes
         p Pauses: 3
         p Pause Time: 15:20
-
         br
         br.dx
         .flex-layer

@@ -42,6 +42,7 @@
     "mobx": "^4.0.0",
     "mobx-react": "^5.0.0",
     "node-sass": "^5.0.0",
+    "query-string": "^4.3.4",
     "react": "^16.2.0",
     "react-classlist-helper": "^1.4.0",
     "react-dom": "^16.2.0",
