@@ -234,9 +234,15 @@ export default class Main extends Component {
     const progAfter = (pomCount, b = bookData) => {
       if (!b) return NBSP;
       return (bookData.progUnite === 'percentage' ? '' : '')
-        + Math.round(b.progToDate + b.weightedProgPerPom*pomCount)
+        + Math.min(Math.round(b.progToDate + b.weightedProgPerPom*pomCount), b.goal)
         + (bookData.progUnit === 'percentage' ? '%' : '');
     };
+
+    const doneIn = !bookData ? Infinity :
+      Math.ceil((bookData.goal - bookData.progToDate)/bookData.weightedProgPerPom);
+    const filterToDone = (pomCounts) => pomCounts
+      .map(n => Math.min(doneIn, n))
+      .filter((n, i, a) => a.indexOf(n) === i);
 
     return pug`
       .screen.start.book
@@ -259,22 +265,22 @@ export default class Main extends Component {
           .rows(style=${{
             margin: '0px 2px',
           }})
-            each pomCount in [1,2,4,6]
+            each pomCount in filterToDone([1, 2, 4, 6])
               .pom-container(
-                key=pomCount
-                style=${{
-                  background: '#4349',
-                  border: '1px solid black',
-                  margin: 8,
-                  padding: 7,
-                  paddingBottom: 10,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                }}
-              )
-                h2.prog-after ${progAfter(pomCount)}
-                .pom ${pomCount}
+                  key=${Math.random()}
+                  style=${{
+                    background: '#4349',
+                    border: '1px solid black',
+                    margin: 8,
+                    padding: 7,
+                    paddingBottom: 10,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                  }}
+                )
+                  h2.prog-after ${progAfter(pomCount)}
+                  .pom ${pomCount}
           .rows
             h1(
               onClick=${e => this.navTo('/book_running')}
@@ -498,7 +504,7 @@ function BookBurnDown({
             )
         each _, i in Array(weightedPomsLeft).fill()
           .bar-forecast(
-            key=i
+            key=${weightedPomsLeft*i}
             style=${{
               height: weightedBarHeight(i),
             }}
