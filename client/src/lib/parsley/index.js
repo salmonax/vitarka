@@ -58,6 +58,10 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       // Not super efficient, but should be fine for the purpose.
       var comps = Object.keys(parsley.startHours).map(n => Date.parse(n)).sort();
       var nearestSmallerIndex = comps.findIndex(compUTC => compUTC > adjustedUTC) - 1;
+      // 2021: Hmm... this is a bit puzzling.
+      // The following would only seem to hold if adjustedUTC is the smallest date,
+      // and all it does is arbitarily shunt it to the LAST existing startHour in the entire
+      // bucket? This seems incorrect.
       if (extendToFuture && !comps[nearestSmallerIndex]) {
         nearestSmallerIndex = comps.length - 1;
       }
@@ -85,14 +89,25 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       return (new Date(this.adjustedUTC())).toLocaleDateString('en-EN');
     },
     latestStartHour: function() {
-      return this.startHours[this.getNearestDayWithStartHour(Date.now(), true)] ||
+      // UPDATE 2021: fixed to allow 0th startHour
+      const maybeStart = this.startHours[this.getNearestDayWithStartHour(Date.now(), true)];
+      return maybeStart !== undefined ?
+        maybeStart :
         parsley.DEFAULTS.dayStartHour;
     },
     startHour: function(adjustedUTC) {
-      return parsley.startHours[(new Date(adjustedUTC).toLocaleDateString())] ||
+      // UPDATE 2021: fixed to allow 0th startHour
+      let maybeStart = parsley.startHours[(new Date(adjustedUTC).toLocaleDateString())];
+      // TODO: searching for the nearest startHour as below may be deprecated, as it's built
+      // up during parsing into the startHours object, and could be gotten by simply looking
+      // at the previous day..
+      if (maybeStart === undefined) {
+        maybeStart = parsley.startHours[parsley.getNearestDayWithStartHour(adjustedUTC, true)];
+      }
+      return maybeStart !== undefined ?
         // VITARKA: this probably needs to be clamped to not be buggy;
         // also, should probably be a configurable option
-        parsley.startHours[parsley.getNearestDayWithStartHour(adjustedUTC, true)] ||
+        maybeStart :
         parsley.DEFAULTS.dayStartHour;
     },
     dayTotal: function(dateWithOffset,separateOffset) {
