@@ -236,10 +236,16 @@ export default class Common {
     return Date.now()-(this._dayEndHour - 24)*36e5;
   }
 
-  pomsDaysAgo(daysAgo, parsleyData = this.parsleyData) {
-    const { tasks } = parsleyData;
-    const adjustedUTC = this._adjustedUTC;
-    return tasks.filter(task => -Time.countDaysToDate(task.baseDate, adjustedUTC) === daysAgo).map(n => +n.duration).reduce((a, n) => a+n,0)
+  pomsDaysAgo(daysAgo) {
+    return this.tasksDaysAgo(daysAgo)
+      .map(n => +n.duration)
+      .reduce((a, n) => a+n,0);
+  }
+
+  tasksDaysAgo(daysAgo, parsleyData = this.parsleyData) {
+    const { tasks, lastUTC } = parsleyData;
+    const adjustedUTC = Math.max(this._adjustedUTC, lastUTC);
+    return tasks.filter(task => -Time.countDaysToDate(task.baseDate, adjustedUTC) === daysAgo);
   }
 
   @computed get tasksToday() {
