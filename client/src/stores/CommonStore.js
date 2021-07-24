@@ -163,10 +163,10 @@ export default class Common {
   }
 
 
-  @action.bound onFirstPomsheetChunk(text) {
+  @action.bound async onFirstPomsheetChunk(text) {
     this.updatedOnFocus = 'I did it! ' + Date.now(); // ???
     if ((!this.lastPomsheetResult || !this.lastPomsheetResult.merged) && !this.rawScratch) {
-      const partialParsleyData = ParsleyService.buildParsleyData(text, { partialOnly: true });
+      const partialParsleyData = await ParsleyService.buildParsleyData(text, { partialOnly: true });
       this.parsleyData = partialParsleyData;
       this.pomsToday = this.pomsDaysAgo(0, partialParsleyData);
     }
@@ -206,7 +206,7 @@ export default class Common {
         const { updatedPomsheet } = await ParsleyService[window.Worker ? 'mergeScratchAsync' : 'mergeScratch'](
           rawScratch,
           // always merge into an unmerged parsleyData object:
-          ParsleyService.buildParsleyData(result.file),
+          await ParsleyService.buildParsleyData(result.file),
         );
         // Unconditionally merge updatedPomsheet to localStorage:
         window.localStorage.setItem(
@@ -220,7 +220,7 @@ export default class Common {
         // Only rebuild the parsley data if the merged raw pomsheet has changed:
         if (this.rawPomsheet !== updatedPomsheet) {
           this.rawPomsheet = updatedPomsheet;
-          this.parsleyData =  ParsleyService.buildParsleyData(updatedPomsheet);
+          this.parsleyData =  await ParsleyService.buildParsleyData(updatedPomsheet);
         } else {
           console.warn('onPomsheetUpdate: skipped parsleyData rebuild because merged sheet unchanged');
         }
@@ -229,7 +229,7 @@ export default class Common {
       const rawPomsheet = result.file; // should maybe be result.text
       this.rawPomsheet = rawPomsheet;
       if (caller === 'onScratchUpdate' || !this._oldPomsheetResult.merged) {
-        this.parsleyData = ParsleyService.buildParsleyData(rawPomsheet);
+        this.parsleyData = await ParsleyService.buildParsleyData(rawPomsheet);
       } else {
         console.log('Skipped setting parsleyData, waiting for onScratchUpdate.');
       }

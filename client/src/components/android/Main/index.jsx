@@ -336,7 +336,7 @@ export default class Main extends Component {
 function SprintBurnDown({ common, parsleyData, ppd, diegesis, legend }) {
   if (!parsleyData) return null;
   // assume they're just one task, split as needed, just as with books:
-  const day = diegesis.day; // note: this won't update appropriately
+  const day = common.getDiegesis().day; // changed for async parsley; other fix might be better
   const binduColors = generateBinduColors(parsleyData, 'category');
 
   const tasks = Array(day).fill().reduce((acc, _, offset) => {

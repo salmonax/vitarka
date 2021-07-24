@@ -24,9 +24,12 @@ const DEFAULT_OPTS = {
   partialOnly: false, // Lets Parsley know that it's not the whole pomsheet
 }
 
-function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
+const nextFrame = () => new Promise(window.requestAnimationFrame);
+
+async function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
   // Intentionally preserve linebreaks with match group, for later
   // reconstitution
+  const startTime = Date.now();
   var lines = Array.isArray(linesOrFile) ? linesOrFile : linesOrFile.split(/(\r?\n)/);
   var currentDate;
   var mediaAliases = {};
@@ -172,10 +175,18 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
 
   // var eof = 150;
   var eof = lines.length;
-  for (var i = 0; i < eof; i++) {
+  let i = -1;
+  let loopStartTime = Date.now();
+  for (let line of lines) {
+    i++;
+    if (!(i%100) && (Date.now()-loopStartTime) > 16.67) { // try to maintain ~44fps
+      await nextFrame();
+      // console.warn('nextFrame, HO!', Date.now()-loopStartTime, i);
+      loopStartTime = Date.now();
+    }
     // Added trim much later, be wary of any weirdness
     // VITARKA: next line won't do anything; should probably nix replace and trim
-    var line = lines[i].replace(/\r?\n|\r/g,'').trim();
+    line = line.replace(/\r?\n|\r/g,'').trim();
     if (isMediaAlias(line)) {
       const [ short, title, author ] = line.split(/\s*(?:->|\[|\])\s*/);
       if (!mediaAliases[short]) {
@@ -368,6 +379,7 @@ function buildParsleyData(linesOrFile, opts = DEFAULT_OPTS) {
       });
     });
 
+  console.warn('@@@@@ buildParsley finished in:', Date.now()-startTime);
   return parsley;
 
   function updateStats(task) {
