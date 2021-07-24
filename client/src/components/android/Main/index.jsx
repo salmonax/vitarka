@@ -230,6 +230,14 @@ export default class Main extends Component {
       ...bookData,
       common: this.props.common,
     };
+
+    const progAfter = (pomCount, b = bookData) => {
+      if (!b) return NBSP;
+      return (bookData.progUnite === 'percentage' ? '' : '')
+        + Math.round(b.progToDate + b.weightedProgPerPom*pomCount)
+        + (bookData.progUnit === 'percentage' ? '%' : '');
+    };
+
     return pug`
       .screen.start.book
         h1.center Start from Book
@@ -248,8 +256,25 @@ export default class Main extends Component {
           each task, i in summaries
             p.s(key=i) ${task}
         .flex-layer
-          .rows
-            h1 1 2 3 4
+          .rows(style=${{
+            margin: '0px 2px',
+          }})
+            each pomCount in [1,2,4,6]
+              .pom-container(
+                key=pomCount
+                style=${{
+                  background: '#4349',
+                  border: '1px solid black',
+                  margin: 8,
+                  padding: 7,
+                  paddingBottom: 10,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                }}
+              )
+                h2.prog-after ${progAfter(pomCount)}
+                .pom ${pomCount}
           .rows
             h1(
               onClick=${e => this.navTo('/book_running')
