@@ -136,7 +136,9 @@ var calendarView = function() {
     $("#calendar").append(div("cal-body",true));
 
     // It's a bit weird that this is being set here, just rolling with it for now
-    var hoursOffset = +qp.get().hoursOffset || 6;
+
+    var hoursOffset = +qp.get().hoursOffset;
+    if (hoursOffset === undefined) hourseOffset = 6;
 
     offsetCurrentDate = new Date(currentDate.getTime());
     offsetCurrentDate.setHours(offsetCurrentDate.getHours()-hoursOffset);
