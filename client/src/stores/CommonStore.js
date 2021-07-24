@@ -228,17 +228,25 @@ export default class Common {
     } else {
       const rawPomsheet = result.file; // should maybe be result.text
       this.rawPomsheet = rawPomsheet;
-      this.parsleyData = ParsleyService.buildParsleyData(rawPomsheet);
+      if (caller === 'onScratchUpdate' || !this._oldPomsheetResult.merged) {
+        this.parsleyData = ParsleyService.buildParsleyData(rawPomsheet);
+      } else {
+        console.log('Skipped setting parsleyData, waiting for onScratchUpdate.');
+      }
       console.log('Has not loaded once, or no rawScratch exists');
     }
 
     this._lastPomsheetHash = result.content_hash;
-    this.pomsToday = this.pomsDaysAgo(0);
-    this.diegesis = this.getDiegesis();
-    this.pomsheetHasLoadedResolve();
-    this.runParsleyCallbacks(this.parsleyData);
 
-    console.log('updated pomsheet. elapsed:', Date.now() - _updateStart + 'ms');
+    if (caller === 'onScratchUpdate' || !this._oldPomsheetResult.merged) {
+      this.pomsToday = this.pomsDaysAgo(0);
+      this.diegesis = this.getDiegesis();
+      this.pomsheetHasLoadedResolve();
+      this.runParsleyCallbacks(this.parsleyData);
+      console.log('updated pomsheet. elapsed:', Date.now() - _updateStart + 'ms', caller);
+    } else {
+      console.log('Ignored end of onPomsheetUpdate, waiting for onScratchUpdate.');
+    }
     return this.parsleyData;
   }
   get hasPomsheetLoadedOnce() {
