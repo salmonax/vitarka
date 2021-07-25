@@ -334,9 +334,12 @@ export default class Main extends Component {
 }
 
 function SprintBurnDown({ common, parsleyData, ppd, diegesis, legend }) {
-  if (!parsleyData) return null;
+  // NOTE: needing to check both is a side-effect of the fact that they're changed
+  // one right after the other. It would definitely be better to have parsleyData and
+  // diegesis changed in the same action, and to make sure that we're re-rendering correctly.
+  if (!parsleyData || !diegesis) return null;
   // assume they're just one task, split as needed, just as with books:
-  const day = common.getDiegesis().day; // changed for async parsley; other fix might be better
+  const day = diegesis.day;
   const binduColors = generateBinduColors(parsleyData, 'category');
 
   const tasks = Array(day).fill().reduce((acc, _, offset) => {

@@ -656,7 +656,7 @@ export default class Common {
 
 
   getDiegesis() {
-    if (!this.parsleyData) return {};
+    if (!this.parsleyData) return null;
     // WARNING: CHANGE THIS
     const adjustedNow = Math.max(this._adjustedUTC, this.parsleyData.lastUTC);
     const startHour = this.parsleyData.startHour(adjustedNow);
