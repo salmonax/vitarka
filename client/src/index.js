@@ -8,30 +8,34 @@ import App from './components/App';
 import { BrowserRouter } from 'react-router-dom';
 
 
-window.unregister = function unregisterServiceWorker() {
-  return navigator.serviceWorker.getRegistrations().then(regs => {
-    for (let reg of regs) {
-      reg.unregister();
-    }
-  });
-}
+// 2021: ServiceWorker code was for beeps, which are now handled via
+// Cordova on mobile.
+// Commenting out in case it makes sense to re-implement for desktop.
 
-function registerServiceWorker() {
-  Notification.requestPermission();
-  navigator.serviceWorker
-      .register('/service-worker.js')
-      .then(registration => {
-          console.log(
-              "ServiceWorker registered with scope:",
-              registration.scope,
-          );
-      })
-      .catch(e => console.error("ServiceWorker failed:", e));
-}
+// window.unregister = function unregisterServiceWorker() {
+//   return navigator.serviceWorker.getRegistrations().then(regs => {
+//     for (let reg of regs) {
+//       reg.unregister();
+//     }
+//   });
+// }
 
-if (navigator && navigator.serviceWorker && window.Notification) {
-  registerServiceWorker();
-}
+// function registerServiceWorker() {
+//   Notification.requestPermission();
+//   navigator.serviceWorker
+//       .register('/service-worker.js')
+//       .then(registration => {
+//           console.log(
+//               "ServiceWorker registered with scope:",
+//               registration.scope,
+//           );
+//       })
+//       .catch(e => console.error("ServiceWorker failed:", e));
+// }
+
+// if (navigator && navigator.serviceWorker && window.Notification) {
+//   registerServiceWorker();
+// }
 
 ReactDOM.render(
   <Provider {...stores}>
