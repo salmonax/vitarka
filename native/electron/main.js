@@ -1,13 +1,15 @@
-const { app, Tray, Menu, BrowserWindow, nativeImage } = require('electron');
+const { app, Tray, Menu, BrowserWindow, nativeImage, screen } = require('electron');
+
+global.screen = screen;
 const path = require('path');
 
 const DataURI = require('datauri');
 
+// Wait, what was this intended to do?
 DataURI(path.join(__dirname, "icon.png"))
   .then(path => {
-    global.fuck = nativeImage.createFromDataURL(path);
+    global.wat = nativeImage.createFromDataURL(path);
   });
-
 
 const j = fn => path.join(__dirname, 'icons', fn + '.png');
 const icons = `
@@ -36,14 +38,67 @@ let win = null;
 
 if (process.env.NODE_ENV === 'development') {
   require('electron-watch')(
-    __dirname,
-    'dev',             // npm scripts, means: npm run dev:electron-main
+    __dirname + '/*.js',             // ignore non-js changes
+    'dev',                           // npm scripts, means: npm run dev:electron-main
     path.join(__dirname, './'),      // cwd
     2000,                            // debounce delay
   );
 }
-app.on('ready', async function(){
-  win = new BrowserWindow({show: false});
+global.app = app;
+app.on('ready', onAppReady);
+
+// Kludgy, but allows window to stay open, yet
+// correctly detects when intention is to close app.
+let _ranBeforeQuit = false;
+app.on('before-quit', e => {
+  _ranBeforeQuit = true;
+});
+
+function resizeAndCenter(win, widthHeight, _screen = screen) {
+  const [winWidth, winHeight] = widthHeight || win.getSize();
+  const { width: screenWidth, height: screenHeight } = _screen.getPrimaryDisplay().workAreaSize;
+  win.setBounds({
+    x: Math.round((screenWidth-winWidth)/2),
+    y: Math.round((screenHeight-winHeight)/2),
+    width: winWidth,
+    height: winHeight,
+  });
+}
+
+// Maybe load these with dialog.about() and dialog.options() and
+// make a simple function that they both use:
+function loadAbout(win = global.win) {
+  win.loadFile('about.html').then(_ => {
+    win.visibleOnAllWorkspaces = true;
+    win.title = 'About Vitarka';
+    resizeAndCenter(win, [280, 330]);
+    win.show();
+  });
+}
+
+function loadConfig(win = global.win) {
+  win.loadFile('config.html').then(_ => {
+    win.visibleOnAllWorkspaces = true;
+    win.title = 'Vitarka Preferences';
+    resizeAndCenter(win, [394, 276]);
+    win.show();
+  });
+}
+
+global.rc = resizeAndCenter;
+global.la = loadAbout;
+
+async function onAppReady() {
+  win = global.win = new BrowserWindow({show: false, visibleOnAllWorkspaces: true });
+
+  win.on('close', e => {
+    if (!_ranBeforeQuit) {
+      e.preventDefault();
+      win.hide();
+    } else {
+      console.log('quitting for real tho');
+    }
+  });
 
   appIcon = new Tray(icons.status_turnip_stopped);
   appIcon.setTitle(' Stopped')
@@ -60,13 +115,6 @@ app.on('ready', async function(){
       type: 'normal',
       icon: icons.stop_enabled,
     },
-    // {
-    //   label: 'Item2',
-    //   submenu: [
-    //     { label: 'submenu1' },
-    //     { label: 'submenu2' }
-    //   ]
-    // },
     {
       type: 'separator',
     },
@@ -83,14 +131,6 @@ app.on('ready', async function(){
     {
       type: 'separator',
     },
-    // {
-    //   label: 'Whatever the fuck',
-    //   accelerator: 'Alt+Command+I',
-    //   click: function() {
-    //     win.show();
-    //     win.toggleDevTools();
-    //   }
-    // },
     {
       label: 'Turnip',
       type: 'radio',
@@ -112,10 +152,12 @@ app.on('ready', async function(){
     {
       label: 'About Vitarka',
       type: 'normal',
+      click: () => loadAbout(),
     },
     {
       label: 'Preferences...',
-      type: 'normal'
+      type: 'normal',
+      click: () => loadConfig(),
     },
     {
       type: 'separator',
@@ -127,4 +169,4 @@ app.on('ready', async function(){
   ]);
   appIcon.setToolTip('This is my application.');
   appIcon.setContextMenu(contextMenu);
-});
+}

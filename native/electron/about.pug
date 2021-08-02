@@ -1,0 +1,69 @@
+html
+  head
+    style.
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0%;
+        font-family: monospace;
+        color: white;
+        background: black;
+      }
+
+      @media (min-width: 400px) {
+        body {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        body .about-container {
+          width: 280px;
+          height: 330px;
+        }
+      }
+
+      .about-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+
+        background: #434;
+      }
+      .title {
+        flex-grow: 0;
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .version {
+        flex-grow: 0;
+        margin-bottom: 10px;
+      }
+      .flavor {
+        padding: 0px 20px;
+        display: flex;
+        align-items: center;
+        font-size: 12px;
+        line-height: 1.5em;
+        text-align: center;
+        height: 100%;
+      }
+      .copyright {
+        text-align: center;
+        padding: 15px;
+        font-size: 10px;
+      }
+  body
+    .about-container
+      .logo
+        img(src="vitarka-logo.png" width="125")
+      .title Vitarka Toolbar
+      .version Version 0.2.0
+      .flavor
+        .center
+          | Vitarka Toolbar is a simple, unintrusive desktop timer application fully integrated
+          | into the Vitarka time-management system.
+      .copyright
+        | Copyright 2021 George A. Michel. <br>
+        | All rights reserved.

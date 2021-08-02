@@ -1,0 +1,239 @@
+<html><head><style>html, body {
+  margin: 0px;
+  width: 100%;
+  height: 100%;
+}
+body {
+  background: black;
+  color: white;
+  font-family: monospace;
+}
+.config-container {
+  position: relative;
+  display: flex;
+  box-sizing: border-box;
+  padding: 15px;
+  flex-direction: column;
+  align-items: center;
+  background: #545;
+  width: 100%;
+  height: 100%;
+}
+
+@media (min-width: 400px) {
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+  }
+  body .config-container {
+    width: 393px;
+    height: 275px;
+  }
+}
+
+.config-container > * {
+  z-index: 2;
+}
+.tab-container {
+  display: flex;
+}
+.tab {
+  user-select: none;
+  padding: 5px 10px;
+  background: linear-gradient(#99a, #555);
+  border: 1px solid #211;
+  border-left: 0px;
+}
+.tab:first-of-type {
+  border-left: 1px solid #211;
+  border-radius: 10px 0px 0px 10px;
+}
+.tab:last-of-type {
+  border-radius: 0px 10px 10px 0px;
+}
+.tab.selected {
+  background: linear-gradient(#559, #222);
+}
+.page {
+  //- font-size: 12px;
+  display: none;
+}
+.page input {
+  //- height: 16px;
+  //- font-size: 12px;
+  width: 32px;
+}
+.page input[type=text] {
+  margin-right: 10px;
+}
+.page .before {
+  min-width: 100px;
+}
+.page .after {
+  min-width: 100px;
+}
+.page.selected {
+  width: 100%;
+  height: 100%;
+  background: red;
+  display: unset;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+}
+.rect-decor {
+  position: absolute;
+  top: 10%;
+  width: 100%;
+  height: 100%;
+  border: 1px inset #656;
+  background: #434;
+  border-radius: 5px;
+  width: 90%;
+  height: 80%;
+  z-index: 1;
+}
+
+</style></head><body><div class="config-container"><div class="rect-decor"></div></div><script>const $ = document.querySelector.bind(document);
+const $$ = document.querySelectorAll.bind(document);
+// default onChange is: set value to new entry
+const config = {
+  general: {
+    _label: 'Show time in status bar',
+    time: {
+      none: 'Do not show',
+      minutes: 'Minutes only',
+      seconds: 'Minutes and seconds',
+    },
+  },
+  time: {
+    pomodoro: 'Pomodoro: $input(25) minutes',
+    shortBreak: 'Short break: $input minutes',
+    longBreak: 'Long break: $input(15) minutes',
+    autoStart: '$checkbox(true) Start next timer automatically'
+  },
+  notifications: {
+    soundOnStart: '$checkbox(false) Play sound when the timer starts',
+    soundOnEnd: '$checkbox(true) Play sound when the timer goes off',
+    notifyOnEnd: '$checkbox(false) Show notifications when timers go off',
+    _label: 'Play tick tock sound during:',
+    _box: 2,
+    tickOnPomodoro: '$checkbox(false) Pomodoro',
+    tickOnBreak: '$checkbox(true) Break',
+  },
+  hotkeys: {
+    _label: 'Click to record hotkey',
+    startHotkey: {
+      _template: 'Start Pomodoro: $input',
+      click: () => { console.log('start hotkey set') },
+      change: () => { console.log('run hotkey change') },
+    },
+    stopHotkey: {
+      _template: 'Stop Pomodoro: $input',
+      click: () => { console.log('start hotkey set') },
+      change: () => { console.log('run hotkey change') },
+    }
+  },
+};
+
+buildFromTemplate(config, $('.config-container'));
+
+function buildFromTemplate(config, $parent) {
+  const entries = Object.entries(config);
+  const $pageContents = div('.page-container');
+  entries.forEach(([tabLabel, content]) => {
+    $pageContents.appendChild(
+      buildPage(tabLabel, content),
+    );
+  });
+
+
+  const $tabContainer = div('.tab-container');
+  $tabContainer.append(
+    ...entries.map(([tabLabel]) =>
+      div('.tab', cap(tabLabel), {
+        onclick: (e) => {
+          // just quick and dirty-like:
+          $$('.tab').forEach($tab => $tab.classList.remove('selected'));
+          e.target.classList.add('selected');
+          $$('.page').forEach($page => $page.classList.remove('selected'));
+          $(`.${tabLabel.toLowerCase()}.page`).classList.add('selected');
+        },
+      }),
+    ),
+  );
+  $parent.appendChild($tabContainer);
+  $parent.appendChild($pageContents);
+}
+
+function buildPage(tabLabel, content) {
+  const pageClass = tabLabel.toLowerCase();
+  const pageEntries = Object.entries(content);
+
+  const pageDivs = pageEntries.map(([key, value]) => {
+    if (key === '_label') {
+      return div('label', value);
+    }
+    if (typeof value === 'string') {
+      // handle settings template
+      const $setting = div('settings-row');
+
+      const [_match, before, input, inputDefault, after] =
+        value.match(/(.*)?(\$[a-z]+)(?:\((.*)\))?(.*)?/);
+
+      const $input = ({
+        $input: d => div('input', null, { type: 'text', value: d ? d : '' }, null, 'input'),
+        $checkbox: d => div('input', null, { type: 'checkbox', checked: d === 'true' }, null, 'input'),
+      }[input])(inputDefault);
+      console.log(
+        before, input, inputDefault, after,
+      );
+      $setting.append(
+        before ? div('.before', before) : '',
+        $input,
+        after ? div('.after', after) : '',
+      );
+      return $setting;
+    }
+
+    if (typeof value === 'object') {
+      if (value._template) return;
+      const $select = div('selection', null, {
+        id: key,
+        name: key,
+        onchange: e => window.foo = e,
+      }, null, 'select');
+      const optionEntries = Object.entries(value);
+      const $$options = optionEntries.map(([value, description]) =>
+        div(value, description, { value }, null, 'option'),
+      );
+      $select.append(...$$options);
+      return $select;
+    }
+    return false;
+  }).filter(n => n);
+  console.log(pageDivs);
+
+  const $page = div(`.${pageClass}.page`);
+  $page.append(
+    ...pageDivs,
+  );
+  return $page;
+}
+
+function div(classNames, text, attribs, styles, el = 'div') {
+  const _div = document.createElement(el);
+  Object.assign(_div.style, styles);
+  Object.assign(_div, attribs);
+  _div.innerText = text ||'';
+  classNames.split('.').filter(n => n)
+    .forEach(className => _div.classList.add(className));
+  return _div;
+}
+
+function cap(str) {
+  return str[0].toUpperCase() + str.substr(1);
+}</script></body></html>
