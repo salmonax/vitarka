@@ -17,7 +17,6 @@ html
         box-sizing: border-box;
         padding: 15px;
         flex-direction: column;
-        align-items: center;
         background: #545;
         width: 100%;
         height: 100%;
@@ -41,6 +40,7 @@ html
       }
       .tab-container {
         display: flex;
+        align-self: center;
       }
       .tab {
         user-select: none;
@@ -59,6 +59,10 @@ html
       .tab.selected {
         background: linear-gradient(#559, #222);
       }
+      .page-container {
+        margin: 20px;
+      }
+
       .page {
         //- font-size: 12px;
         display: none;
@@ -70,7 +74,16 @@ html
       }
       .page input[type=text] {
         margin-right: 10px;
+        height: 20px;
       }
+      .page input[type=checkbox] {
+        margin-left: -8px;
+      }
+
+      .label {
+        margin: 10px 0px;
+      }
+
       .page .before {
         min-width: 100px;
       }
@@ -80,7 +93,6 @@ html
       .page.selected {
         width: 100%;
         height: 100%;
-        background: red;
         display: unset;
       }
       .settings-row {
@@ -90,6 +102,7 @@ html
       .rect-decor {
         position: absolute;
         top: 10%;
+        left: 5%;
         width: 100%;
         height: 100%;
         border: 1px inset #656;
@@ -98,6 +111,14 @@ html
         width: 90%;
         height: 80%;
         z-index: 1;
+      }
+
+      /* page-specific styles (aka. hacks) */
+      .hotkeys .before {
+        width: 120px;
+      }
+      .hotkeys input {
+        width: 125px;
       }
 
 
