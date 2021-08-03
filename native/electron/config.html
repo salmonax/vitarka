@@ -124,17 +124,17 @@ const $$ = document.querySelectorAll.bind(document);
 const config = {
   general: {
     _label: 'Show time in status bar',
-    time: {
+    show: {
       none: 'Do not show',
       minutes: 'Minutes only',
       seconds: 'Minutes and seconds',
     },
   },
   time: {
-    pomodoro: 'Pomodoro: $input(25) minutes',
+    turnip: 'Turnip: $input(25) minutes',
     shortBreak: 'Short break: $input minutes',
     longBreak: 'Long break: $input(15) minutes',
-    autoStart: '$checkbox(true) Start next timer automatically'
+    autoStartNext: '$checkbox(true) Start next timer automatically'
   },
   notifications: {
     soundOnStart: '$checkbox(false) Play sound when the timer starts',
@@ -142,106 +142,129 @@ const config = {
     notifyOnEnd: '$checkbox(false) Show notifications when timers go off',
     _label: 'Play tick tock sound during:',
     _box: 2,
-    tickOnPomodoro: '$checkbox(false) Pomodoro',
+    tickOnTurnip: '$checkbox(false) Turnip',
     tickOnBreak: '$checkbox(true) Break',
   },
   hotkeys: {
     _label: 'Click to record hotkey',
     startHotkey: {
-      _template: 'Start Pomodoro: $input',
-      click: () => { console.log('start hotkey set') },
-      change: () => { console.log('run hotkey change') },
+      _template: 'Start Turnip: $input',
+      onclick: () => { console.log('start hotkey set') },
+      onchange: () => { console.log('run hotkey change') },
     },
     stopHotkey: {
-      _template: 'Stop Pomodoro: $input',
-      click: () => { console.log('start hotkey set') },
-      change: () => { console.log('run hotkey change') },
+      _template: 'Stop Turnip: $input',
+      onclick: () => { console.log('start hotkey set') },
+      onchange: () => { console.log('run hotkey change') },
     }
   },
 };
 
-buildFromTemplate(config, $('.config-container'));
+// Events for the whole app; it's small, so it's fine.
+const actionMap = {
+  selectTabFn: i => e => {
+    $$('.tab').forEach(($tab, j) => $tab.classList[j === i ? 'add' : 'remove']('selected'));
+    $$('.page').forEach(($page, j) => $page.classList[j === i ? 'add' : 'remove']('selected'));
+    window.history.pushState({}, '', window.location.pathname + '#' + i);
+  },
+  selectTab(index) {
+    this.selectTabFn(index)();
+  }
+};
 
-function buildFromTemplate(config, $parent) {
-  const entries = Object.entries(config);
+const _runtimeConfig = {}; // Note: should load from localStorage.
+buildFromTemplate(config, $('.config-container'), _runtimeConfig);
+actionMap.selectTab(+window.location.hash.substr(1) || 0);
+
+
+function buildFromTemplate(config, $parent, _runtimeConfig) {
+  const configEntries = Object.entries(config);
   const $pageContents = div('.page-container');
-  entries.forEach(([tabLabel, content]) => {
+  configEntries.forEach(([tabLabel, content]) => { // NOTE: will mutate _runtimeConfig; not my favorite
     $pageContents.appendChild(
-      buildPage(tabLabel, content),
+      buildPage(tabLabel, content, _runtimeConfig),
     );
   });
 
-
   const $tabContainer = div('.tab-container');
   $tabContainer.append(
-    ...entries.map(([tabLabel]) =>
-      div('.tab', cap(tabLabel), {
-        onclick: (e) => {
-          // just quick and dirty-like:
-          $$('.tab').forEach($tab => $tab.classList.remove('selected'));
-          e.target.classList.add('selected');
-          $$('.page').forEach($page => $page.classList.remove('selected'));
-          $(`.${tabLabel.toLowerCase()}.page`).classList.add('selected');
-        },
-      }),
+    ...configEntries.map(([tabLabel], i) =>
+      div('.tab', cap(tabLabel), { onclick: actionMap.selectTabFn(i) }),
     ),
   );
   $parent.appendChild($tabContainer);
   $parent.appendChild($pageContents);
 }
 
-function buildPage(tabLabel, content) {
+function buildPage(tabLabel, content, _runtimeConfig) {
   const pageClass = tabLabel.toLowerCase();
   const pageEntries = Object.entries(content);
 
+  if (!_runtimeConfig[tabLabel]) _runtimeConfig[tabLabel] = {};
+  const _tabConfig = _runtimeConfig[tabLabel];
+
   const pageDivs = pageEntries.map(([key, value]) => {
-    if (key === '_label') {
-      return div('label', value);
+    if (key === '_label') return div('label', value);
+    if (typeof value === 'string') return _buildSetting(key, value, _tabConfig);
+    if (typeof value === 'object') {
+      if (value._template) return _buildSetting(key, value._template, _tabConfig, value);
+      return _buildDropdown(key, value, _tabConfig);
     }
-    if (typeof value === 'string') {
-      // handle settings template
+    return false;
+
+    function _buildSetting(key, value, _tabConfig, { onclick, onchange } = {}) {
       const $setting = div('settings-row');
-
-      const [_match, before, input, inputDefault, after] =
+      const [_match, before, inputToken, inputDefault, after] =
         value.match(/(.*)?(\$[a-z]+)(?:\((.*)\))?(.*)?/);
-
+      const val = { $input: d => d === undefined ? '' : +d, $checkbox: d => d === true }[inputToken];
       const $input = ({
-        $input: d => div('input', null, { type: 'text', value: d ? d : '' }, null, 'input'),
-        $checkbox: d => div('input', null, { type: 'checkbox', checked: d === 'true' }, null, 'input'),
-      }[input])(inputDefault);
-      console.log(
-        before, input, inputDefault, after,
-      );
+        $input: d => div('input', null, {
+          type: 'text',
+          value: val(d),
+          onchange: e => {
+            _tabConfig[key] = +e.target.value;
+          },
+          oninput: e => {
+            e.target.value = e.target.value.replace(/[^0-9]/g,'');
+          }
+        }, null, 'input'),
+        $checkbox: d => div('input', null, {
+          type: 'checkbox',
+          checked: val(d),
+          onchange: e => {
+            // run custom onchange here
+            _tabConfig[key] = e.target.checked;
+          },
+        }, null, 'input'),
+      }[inputToken])(inputDefault);
       $setting.append(
         before ? div('.before', before) : '',
         $input,
         after ? div('.after', after) : '',
       );
+      _tabConfig[key] = val(inputDefault);
       return $setting;
     }
-
-    if (typeof value === 'object') {
-      if (value._template) return;
+    function _buildDropdown(key, value, _tabConfig) {
       const $select = div('selection', null, {
         id: key,
         name: key,
-        onchange: e => window.foo = e,
+        onchange: e => _tabConfig[key] = e.target.value,
       }, null, 'select');
       const optionEntries = Object.entries(value);
       const $$options = optionEntries.map(([value, description]) =>
         div(value, description, { value }, null, 'option'),
       );
       $select.append(...$$options);
+
+      _tabConfig[key] = optionEntries[0][0]; // will default to first; no way to specify for these
       return $select;
     }
-    return false;
+
   }).filter(n => n);
-  console.log(pageDivs);
 
   const $page = div(`.${pageClass}.page`);
-  $page.append(
-    ...pageDivs,
-  );
+  $page.append(...pageDivs);
   return $page;
 }
 
