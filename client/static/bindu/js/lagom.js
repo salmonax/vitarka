@@ -20,15 +20,15 @@ window.qp = {
 // (was originally top-level)
 // Note: this will get called by the component when the pomsheet is loaded
 //  so no need to invoke it here.
-function startBindu(parsleyData) {
+function startBindu(parsleyData, sunrisePromise) {
   if (window.$view) {
     window.$view.clearIntervals();
   }
   // Vitarka: Using on re-renders as well, so always clear
   // the element. Kind of a kludge, but better
   // than leaving in the component
-  window.$('#calendar').empty();  
-  
+  window.$('#calendar').empty();
+
   // Not sure if these were closured anywhere, so attaching
   // to window to preserve prior behavior
   window.lastYear = '';
@@ -38,11 +38,11 @@ function startBindu(parsleyData) {
   //TODO: get view rendered BEFORE getting the data
   // $.when(lastYear,thisYear,journalRaw).done(function (lastYear, thisYear,journalRaw, parsleyData) {
   var model = initModel(lastYear,thisYear,journalRaw, parsleyData),
-      view = calendarView.init(model);
+      view = calendarView.init(model, sunrisePromise);
   calendarController.init("#calendar", view);
   window.$view = view
     // }
-  // ); 
+  // );
 }
 
 
@@ -58,10 +58,10 @@ function initModel(lastYear,thisYear,journalRaw, parsleyData) {
       journalLines = journalRaw[0] ? journalRaw[0].split("\n") : [];
 
   var parsley = parsleyData;//buildParsleyData(pomsheetLines);
-      
+
       // DANGER, DANGER: this "works", but calendarView is using
       // journal.
-      journal = buildJournal(journalLines);  
+      journal = buildJournal(journalLines);
 
   return {
     parsley: parsley,
@@ -70,20 +70,20 @@ function initModel(lastYear,thisYear,journalRaw, parsleyData) {
 }
 
 //This was initAlmostEverything()
-//Filters need to be rejiggered, so leaving it as-is for now. 
+//Filters need to be rejiggered, so leaving it as-is for now.
 function initModelWithFilters(lastYear,thisYear,journalRaw) {
   var data = lastYear[0] + "\n" + thisYear[0];
 // $.get("/2015",function (data) {
   //parsley = new Parsley(pomsheet);
   //parsleyColors is... iffy. Not sure where to put it yet:
   var parsley = buildData(data);
- 
+
   //next two lines are left out of initModel()
   var filters = parsley.getStatsKeys(),
       selectionObject = {};
 
   var journalLines = journalRaw[0].split("\n"),
-      journal = buildJournal(journalLines);  
+      journal = buildJournal(journalLines);
 
   calendarView.init(parsley,journal);
 
@@ -136,7 +136,7 @@ function initModelWithFilters(lastYear,thisYear,journalRaw) {
 
   function linesFromFiltered(filtered) {
     r();
-    filtered.forEach( function(task,index) { 
+    filtered.forEach( function(task,index) {
       p(parsley.lines[task.index]);
     });
   }
@@ -154,7 +154,7 @@ function initModelWithFilters(lastYear,thisYear,journalRaw) {
       }
       // p(conditionChecks.indexOf(false) == -1);
       return conditionChecks.indexOf(false) == -1;
-    });  
+    });
     return filtered;
   }
   function filterParsleyBy(key,matches) {
@@ -165,7 +165,7 @@ function initModelWithFilters(lastYear,thisYear,journalRaw) {
       if (/^All \(\d+ items\)$/.test(item)) { selectAll = true; }
     });
 
-    var filtered = parsley.tasks.filter(function(task) { 
+    var filtered = parsley.tasks.filter(function(task) {
       return selectAll || matches.indexOf(task[key]) != -1;
     });
     // p(filtered);
@@ -181,7 +181,7 @@ function initModelWithFilters(lastYear,thisYear,journalRaw) {
   }
 
   function clearFilters(exclusions) {
-    filters.forEach(function (title) { 
+    filters.forEach(function (title) {
       if (exclusions.indexOf(title) == -1) {
         $('#'+title+"-filter option").remove()
       }
@@ -235,7 +235,7 @@ function initModelWithFilters(lastYear,thisYear,journalRaw) {
     var currentFilter = $('#'+title+'-filter');
     currentFilter.append('<option>All ('+uniques.length+' items)</option>');
 
-    uniques.forEach(function(option) { 
+    uniques.forEach(function(option) {
       //the following requires stats removal for on-click look up
       currentFilter.append('<option>'+option+' ('+stats[title][option]+')</option>');
     });

@@ -1,5 +1,7 @@
 import { observable, computed, action, toJS, runInAction, autorun } from 'mobx';
 window.autorun = autorun; window.toJS = toJS; window.observable = observable;
+
+import SunriseService from '../lib/sunrise';
 import TurnipService from '../lib/turnip';
 
 /*
@@ -44,6 +46,14 @@ export default class Common {
   pomsDaysAgo(daysAgo) { return this.stores.parsley.pomsDaysAgo(daysAgo); }
   tasksDaysAgo(daysAgo) { return this.stores.parsley.tasksDaysAgo(daysAgo); }
   onParsleyData(cb) { this.stores.parsley.onParsleyData(cb); }
+
+
+  async getSunriseFn() {
+    // Uncomment to debug (move to debug settings):
+    // const lat = 41.11159; const lon = -114.96449;
+    const { lat, lon } = await SunriseService.fetchLocation();
+    return date =>  SunriseService.getTimes(date, lat, lon);
+  }
 
   @action loginAndParsley() {
     const { network, parsley } = this.stores;

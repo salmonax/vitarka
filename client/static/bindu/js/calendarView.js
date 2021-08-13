@@ -34,8 +34,8 @@ window.addEventListener('en-route', e => {
 
 var calendarView = function() {
   return {
-    init: function(model) {
-      return renderCalendar(model.parsley,model.journal);
+    init: function(model, sunrisePromise) {
+      return renderCalendar(model.parsley, model.journal, undefined, sunrisePromise);
     }
   }
 
@@ -43,13 +43,17 @@ var calendarView = function() {
   //For now, it returns renderWeek() and renderTimebar()
   //for the view interface to be used by calendarController()
 
-  function renderCalendar(parsley,journal,startDate) {
+  function renderCalendar(parsley, journal, startDate, sunrisePromise) {
     //TODO: make sure renderWeek uses hoursOffset to determine what "today" is!!
     //TODO: generateParlsyeColors is STILL iffy... figure out where to put it
     var mode = "Box";
     var calendar = {
       nowLineInterval: null,
     };
+
+    // Doing this to prevent a flicker later on re-renders. Not great,
+    // but slightly better than attaching to window.
+    sunrisePromise.then(getSunrise => renderCalendar._sunriseFn = getSunrise);
 
     var dayName = utils.dayName
         dayNameShort = utils.dayNameShort,
@@ -333,9 +337,6 @@ var calendarView = function() {
         benchElapsed = benchEnd-benchStart;
         // r(benchElapsed);
       }
-
-
-
     }
 
     function arcOf(date) {
@@ -831,8 +832,9 @@ var calendarView = function() {
     }
 
 
-    function renderWeek(startDate,hoursOffset,mode, autoAdjustOffset, initialRender) {
+    function renderWeek(startDate, hoursOffset, mode, autoAdjustOffset, initialRender) {
       var lastQuery = qp.get();
+
       if (initialRender && !qp.isEmpty()) {
         // Only on browser-initiated render, override defaults with query params, if they exist
         startDate = new Date(lastQuery.startDate) || startDate;
@@ -1254,10 +1256,11 @@ var calendarView = function() {
 
       //in case latestStartDate can't be gotten from the journal nowlines
       var isCurrentWeek = (weekOf(currentDate).toDateString() == startDate.toDateString())
-      $(".week-column").each(function (index,item) {
+      $(".week-column").each(function (index, item) {
         var currentDay = new Date(startDate.getTime());
         currentDay.setDate(currentDay.getDate()+index);
         //ToDo: get rid of this AWFUL way to get totals!
+        // console.warn(currentDay);
         var total = parsley.dayTotal(currentDay);
         var target = parsley.dayTarget(currentDay);
         // var ratio = total/target;
@@ -1292,10 +1295,59 @@ var calendarView = function() {
             addDayBar(".day-tasks",index,dayStart-hoursOffset+i*5);
           }
         }
-
       });
+
+      // Call synchronously if the function is resolved.
+      // Not the best, but fixes a problem in already-crummy code:
+      renderCalendar._sunriseFn ?
+        addNightOverlay(renderCalendar._sunriseFn) :
+        sunrisePromise.then(addNightOverlay);
+
       showDayStats();
       calendar.nowLineInterval = setInterval(showDayStats,1000);
+
+      function addNightOverlay(getSunTimes) {
+        // Vitarka TODO: to prevent flashing on re-render after promise has resolved,
+        // can set a variable at the renderCalendar level and only conditionally run this promise.
+        // It's kind of awkward to do, but not any worse than anything else in this file.
+        $('.day-tasks').each(function (index, item) {
+          const currentDay = new Date(startDate.getTime());
+          currentDay.setDate(currentDay.getDate()+index);
+
+          const dayLength = 8.64e7;
+          const maxPercent = 100;
+          const dayStart = currentDay.getTime();
+          const dayEnd = dayStart + dayLength;
+
+          currentDay.setHours(currentDay.getHours()+1); // prevent suncalc bug at 0-hour. Do AFTER time comparison.
+          const { dawn, dusk } = getSunTimes(currentDay);
+
+          const dawnBottom = Math.max(0, (1-(dayEnd-dawn.getTime())/(dayEnd-dayStart))*maxPercent);
+
+          const duskTop = Math.max(0, (1-(dayEnd-dusk.getTime())/(dayEnd-dayStart))*maxPercent);
+          let duskBottom = 0;
+
+          // Bleh, unnecessarily running getSunTimes twice, but leaving for now:
+          if (duskTop > 0) {
+            const tomorrow = new Date(startDate.getTime());
+            tomorrow.setDate(tomorrow.getDate()+index+1);
+            tomorrow.setHours(tomorrow.getHours()+1); // prevent suncalc bug again
+            const { dawn: dawnTomorrow } = getSunTimes(tomorrow);
+            const dawnTomorrowTime = dawnTomorrow.getTime();
+            if (dawnTomorrowTime < dayEnd) {
+              duskBottom = (dayEnd-dawnTomorrowTime)/(dayEnd-dayStart)*maxPercent;
+              console.log(dawnTomorrow);
+            }
+          }
+          // NOTE: ignoring dawnTop for now, since the time can't be shifted beyond midnight,
+          // which will cause a bit of a problem in northernmost regions. Oh well.
+
+          $(this).append(
+            `<div class="night-overlay" style="top: 0%; height: ${dawnBottom.toFixed(2)}%"></div>`,
+            `<div class="night-overlay" style="top:${duskTop.toFixed(2)}%; bottom: ${duskBottom}%"></div>`,
+          );
+        });
+      }
 
       //TODO: refactor this with addTotalsBar()?
       function addDayBar(el,index,hours,label) {
@@ -1337,8 +1389,4 @@ var calendarView = function() {
 
     }
   }
-
-
-
-
 }();

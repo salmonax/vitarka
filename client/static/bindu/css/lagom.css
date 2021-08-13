@@ -265,7 +265,8 @@
 	position: absolute;
 	width: 100%;
 	overflow: hidden;
-	line-height: 16px
+	line-height: 16px;
+	z-index: 2;
 }
 
 .subtask {
@@ -374,5 +375,10 @@ table {
 	width: 100%
 }
 
-
+.night-overlay {
+	position: absolute;
+	width: 100%;
+	background: #0004;
+	mix-blend-mode: overlay;
+}
 /*# sourceMappingURL=lagom.css.map */

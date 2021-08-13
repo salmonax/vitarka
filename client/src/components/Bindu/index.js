@@ -11,13 +11,12 @@ export default class Bindu extends Component {
         // Quick fix, but:
         // 1. Should preserve necessary state info for each view, can do quickly in query string
         //      Example: hoursOffset for week
-        
+
         // NOTE: sneakily using OUR parsley rather than the one provided by
         // legacy Bindu code.
-        window.startBindu(common.parsleyData);
+        window.startBindu(common.parsleyData, common.getSunriseFn());
       }
     );
-
   }
   render() {
     return pug`
