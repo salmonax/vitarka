@@ -1328,7 +1328,7 @@ var calendarView = function() {
           let duskBottom = 0;
 
           // Bleh, unnecessarily running getSunTimes twice, but leaving for now:
-          if (duskTop > 0) {
+          if (duskTop !== undefined) {
             const tomorrow = new Date(startDate.getTime());
             tomorrow.setDate(tomorrow.getDate()+index+1);
             tomorrow.setHours(tomorrow.getHours()+1); // prevent suncalc bug again
