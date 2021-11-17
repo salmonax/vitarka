@@ -52,7 +52,12 @@ export default class Common {
     // Uncomment to debug (move to debug settings):
     // const lat = 41.11159; const lon = -114.96449;
     const { lat, lon } = await SunriseService.fetchLocation();
-    return date =>  SunriseService.getTimes(date, lat, lon);
+
+    if ([lat, lon].includes('')) {
+      throw new Error('Invalid lat or lon received from SunriseService.');
+    }
+
+    return date => SunriseService.getTimes(date, lat, lon);
   }
 
   @action loginAndParsley() {

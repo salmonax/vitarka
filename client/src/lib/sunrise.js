@@ -1,5 +1,9 @@
 const API_HOST = 'https://api.culturopathy.com/'
-const LOOKUP_URI = 'https://extreme-ip-lookup.com/json/';
+// Requires API key:
+// const LOOKUP_URI = 'https://extreme-ip-lookup.com/json/';
+
+// Claims they never will:
+const LOOKUP_URI = 'http://ip-api.com/json/';
 
 import suncalc from 'suncalc';
 
