@@ -2,6 +2,7 @@ import { observable, computed, action, toJS, runInAction, autorun } from 'mobx';
 window.autorun = autorun; window.toJS = toJS; window.observable = observable;
 
 import SunriseService from '../lib/sunrise';
+import WeatherService from '../lib/weather';
 import TurnipService from '../lib/turnip';
 
 /*
@@ -58,6 +59,31 @@ export default class Common {
     }
 
     return date => SunriseService.getTimes(date, lat, lon);
+  }
+
+  // Note: This will return an asynchronous function intended to be called multiple times per
+  // minute, synchronously. It will always return the latest closured array of weather periods
+  // and re-fetch those periods after a given update frequency, in minutes.
+  async getWeatherFn() {
+    const { lat, lon } = await SunriseService.fetchLocation(); // cached, so fine if redundant
+
+    if ([lat, lon].includes('')) {
+      throw new Error('Invalid lat or lon received from SunriseService.');
+    }
+    let _periods = await WeatherService.fetchPeriods(lat, lon);
+    let _pendingUpdate;
+
+    return (updateFrequency = 60) => {
+      const minutesFromUpdate = (Date.now()-Date.parse(_periods[0].startTime))/60000;
+      if (minutesFromUpdate > updateFrequency && !_pendingUpdate) {
+        _pendingUpdate = WeatherService.fetchPeriods(lat, lon)
+          .then(periods => {
+            _periods = periods;
+            _pendingUpdate = undefined;
+          });
+      }
+      return _periods;
+    };
   }
 
   @action loginAndParsley() {

@@ -14,7 +14,7 @@ export default class Bindu extends Component {
 
         // NOTE: sneakily using OUR parsley rather than the one provided by
         // legacy Bindu code.
-        window.startBindu(common.parsleyData, common.getSunriseFn());
+        window.startBindu(common.parsleyData, common.getSunriseFn(), common.getWeatherFn());
       }
     );
   }

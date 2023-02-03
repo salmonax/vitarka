@@ -20,7 +20,7 @@ window.qp = {
 // (was originally top-level)
 // Note: this will get called by the component when the pomsheet is loaded
 //  so no need to invoke it here.
-function startBindu(parsleyData, sunrisePromise) {
+function startBindu(parsleyData, sunrisePromise, weatherPromise) {
   if (window.$view) {
     window.$view.clearIntervals();
   }
@@ -38,7 +38,7 @@ function startBindu(parsleyData, sunrisePromise) {
   //TODO: get view rendered BEFORE getting the data
   // $.when(lastYear,thisYear,journalRaw).done(function (lastYear, thisYear,journalRaw, parsleyData) {
   var model = initModel(lastYear,thisYear,journalRaw, parsleyData),
-      view = calendarView.init(model, sunrisePromise);
+      view = calendarView.init(model, sunrisePromise, weatherPromise);
   calendarController.init("#calendar", view);
   window.$view = view
     // }

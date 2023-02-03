@@ -34,8 +34,8 @@ window.addEventListener('en-route', e => {
 
 var calendarView = function() {
   return {
-    init: function(model, sunrisePromise) {
-      return renderCalendar(model.parsley, model.journal, undefined, sunrisePromise);
+    init: function(model, sunrisePromise, weatherPromise) {
+      return renderCalendar(model.parsley, model.journal, undefined, sunrisePromise, weatherPromise);
     }
   }
 
@@ -43,7 +43,7 @@ var calendarView = function() {
   //For now, it returns renderWeek() and renderTimebar()
   //for the view interface to be used by calendarController()
 
-  function renderCalendar(parsley, journal, startDate, sunrisePromise) {
+  function renderCalendar(parsley, journal, startDate, sunrisePromise, weatherPromise) {
     //TODO: make sure renderWeek uses hoursOffset to determine what "today" is!!
     //TODO: generateParlsyeColors is STILL iffy... figure out where to put it
     var mode = "Box";
@@ -54,6 +54,10 @@ var calendarView = function() {
     // Doing this to prevent a flicker later on re-renders. Not great,
     // but slightly better than attaching to window.
     sunrisePromise.then(getSunrise => renderCalendar._sunriseFn = getSunrise);
+
+    // Note: copying pattern just in case; might not be needed for flicker avoidance here:
+    weatherPromise.then(getWeather => renderCalendar._weatherFn = getWeather);
+    var periods; // for weather, set with setWeatherPeriods()
 
     var dayName = utils.dayName
         dayNameShort = utils.dayNameShort,
@@ -1202,11 +1206,21 @@ var calendarView = function() {
             + time.getMinutes().toString().padLeft(2,'0')
             + ":" + time.getSeconds().toString().padLeft(2, '0')
             + "   Period: " + currentPeriod + "   "
-            + "Poms Left: " + pomsLeft + "   ";
+            + "Poms Left: " + pomsLeft + "   "
+            + "Weather: ..."
             // Vitarka: interesting... I didn't know I'd had a "saturation" concept already
             //  Doubt I'll implement it here, but who knows
             //
             // "Crunch: " + crunchStatus;
+
+          var getWeather = renderCalendar._weatherFn;
+
+          if (getWeather) {
+            const periods = window.periods = getWeather();
+            displayString =
+              displayString.replace('...', `${periods[0].temperature}F ${periods[0].shortForecast}`);
+          }
+
           $("#task-details").text(displayString);
 
         }
@@ -1302,6 +1316,11 @@ var calendarView = function() {
       renderCalendar._sunriseFn ?
         addNightOverlay(renderCalendar._sunriseFn) :
         sunrisePromise.then(addNightOverlay);
+
+      // Note: copying pattern again; don't like this, though.
+      // renderCalendar._weatherFn ?
+      //   setWeatherPeriods(renderCalendar._weatherFn) :
+      //   weatherPromise.then(setWeatherPeriods);
 
       showDayStats();
       calendar.nowLineInterval = setInterval(showDayStats,1000);
